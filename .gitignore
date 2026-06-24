@@ -47,3 +47,17 @@ instance/
 # Deployment files
 Procfile
 runtime.txt
+# Flask session files
+flask_session/
+*.sqlite3
+*.db
+
+# Debug/Test files
+*_with_data.pdf
+*_with_grid.pdf
+find_exact_spots.py
+*_signature.png
+
+# Temporary files
+*.tmp
+*.log
