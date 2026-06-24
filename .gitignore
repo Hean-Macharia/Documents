@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs & database
+*.log
+*.db
+*.sqlite3
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Flask / ReportLab temporary files
+instance/
+*.pdf  (if you don't want to track generated PDFs – but we do want the templates)
+
+# But keep the template PDFs:
+!Medical_Form.pdf
+!Sponsorship_Letter.pdf
+!Single_Parent_Self_Certification_2024.pdf
+!stamped_templates/*.pdf
+
+# Deployment files
+Procfile
+runtime.txt

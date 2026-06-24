@@ -1,0 +1,12 @@
+Flask
+Flask-Limiter
+Flask-Talisman
+Flask-Session
+Flask-PyMongo
+pypdf
+reportlab
+Pillow
+python-dotenv
+requests
+marshmallow
+PyMuPDF         

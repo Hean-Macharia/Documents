@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Admin Panel{% endblock %} – Supporting Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        /* ===== RESET & BASE ===== */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a { text-decoration: none; color: inherit; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .navbar .brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .navbar .brand .logo {
+            background: #10b981;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+        .navbar .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            list-style: none;
+        }
+        .navbar .nav-links a {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #475569;
+            transition: color 0.15s;
+        }
+        .navbar .nav-links a:hover { color: #0f172a; }
+        .navbar .nav-links a.active { color: #10b981; font-weight: 600; }
+        .navbar .logout-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .navbar .logout-btn:hover { background: #fecaca; }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            flex: 1;
+            padding: 2rem 0;
+        }
+
+        /* ===== FLASH MESSAGES ===== */
+        .flash-container {
+            margin-bottom: 1.5rem;
+        }
+        .flash {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .flash.success { border-left: 4px solid #10b981; }
+        .flash.error { border-left: 4px solid #ef4444; }
+        .flash.warning { border-left: 4px solid #f59e0b; }
+        .flash.info { border-left: 4px solid #3b82f6; }
+        .flash .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0 0.25rem;
+        }
+        .flash .close-btn:hover { color: #475569; }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .card-header h2 { font-size: 1.25rem; font-weight: 600; }
+        .card-header .sub { color: #64748b; font-size: 0.9rem; }
+
+        /* ===== FORM ELEMENTS ===== */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #334155;
+            margin-bottom: 0.25rem;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            background: #fafcfc;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.2);
+        }
+        .form-group input[type="file"] {
+            padding: 0.4rem 0;
+            border: none;
+            background: transparent;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+        .btn-primary:hover { background: #059669; }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.2rem;
+        }
+        .stat-card.revenue .number { color: #10b981; }
+        .stat-card.pending .number { color: #f59e0b; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .navbar .nav-links { gap: 0.75rem; flex-wrap: wrap; }
+            .navbar .logout-btn { font-size: 0.7rem; padding: 0.3rem 0.75rem; }
+        }
+
+        /* ===== TOAST (for AJAX flash) ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 400px;
+        }
+        .toast {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideUp 0.3s ease;
+        }
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.warning { border-left-color: #f59e0b; }
+        .toast .message { font-weight: 500; font-size: 0.9rem; }
+        .toast .close { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #94a3b8; }
+        @keyframes slideUp {
+            from { opacity:0; transform: translateY(20px); }
+            to { opacity:1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('admin_dashboard') }}" class="brand">
+                <span class="logo">SD</span>
+                Admin Panel
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="{{ url_for('admin_settings_route') }}" class="{% if request.endpoint == 'admin_settings_route' %}active{% endif %}">Settings</a></li>
+                <li><a href="{{ url_for('admin_logout') }}" class="logout-btn">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main">
+        <div class="container">
+
+            <!-- Flash Messages (server‑side) -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">
+                                <span>{{ message }}</span>
+                                <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page content -->
+            {% block content %}{% endblock %}
+
+        </div>
+    </main>
+
+    <!-- ===== TOAST CONTAINER (for AJAX flash) ===== -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script>
+        // Global toast function for AJAX flash messages
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="message">${message}</span>
+                <button class="close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+        }
+
+        // Intercept fetch responses to handle flash messages from the backend
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            return originalFetch(url, options).then(response => {
+                const cloned = response.clone();
+                cloned.json().then(data => {
+                    if (data && data.flash) {
+                        let type = 'info';
+                        if (data.status === 'success' || data.success === true) type = 'success';
+                        else if (data.status === 'error' || data.success === false) type = 'error';
+                        else if (data.status === 'warning') type = 'warning';
+                        showToast(data.flash, type);
+                    }
+                }).catch(() => {});
+                return response;
+            });
+        };
+
+        // Auto‑dismiss server‑side flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.flash').forEach(el => {
+                setTimeout(() => { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 5000);
+            });
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

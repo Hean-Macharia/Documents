@@ -1,0 +1,170 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Dashboard</h1>
+
+<!-- Stats Cards -->
+<div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="number" id="statTotal">—</div><div class="label">Total Bundles</div></div>
+    <div class="stat-card"><div class="number" id="statPaid">—</div><div class="label">Paid</div></div>
+    <div class="stat-card pending"><div class="number" id="statPending">—</div><div class="label">Pending</div></div>
+    <div class="stat-card revenue"><div class="number" id="statRevenue">—</div><div class="label">Revenue (KES)</div></div>
+</div>
+
+<!-- Quick actions -->
+<div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+    <a href="{{ url_for('admin_settings_route') }}" class="btn btn-primary">⚙️ Edit Settings</a>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">🚪 Logout</a>
+</div>
+
+<!-- ===== REFERRAL CODES MANAGEMENT ===== -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>🔗 Referral Codes</h2>
+        <button class="btn btn-primary btn-sm" id="showNewCodeForm">+ New Code</button>
+    </div>
+
+    <!-- New Code Form (hidden by default) -->
+    <div id="newCodeForm" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: var(--radius-md);">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="text" id="newCode" placeholder="Code (e.g., MARKET123)" style="flex: 1; min-width: 150px; padding: 0.4rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-md);" />
+            <input type="text" id="newMarketer" placeholder="Marketer Name" style="flex: 1; min-width: 150px; padding: 0.4rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-md);" />
+            <button class="btn btn-primary btn-sm" id="saveCodeBtn">Save</button>
+            <button class="btn btn-secondary btn-sm" id="cancelCodeBtn">Cancel</button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Discount per document: <strong>KES {{ referral_discount or 50 }}</strong> (set via environment variable)</p>
+    </div>
+
+    <!-- Referral Codes List -->
+    <div id="referralCodesList">
+        <p style="color: var(--text-secondary);">Loading codes...</p>
+    </div>
+</div>
+
+<!-- Optional: Recent forms (you can expand later) -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>📄 Recent Documents</h2>
+        <span class="sub">Latest submissions</span>
+    </div>
+    <p style="color: #64748b; font-size: 0.95rem;">Visit the <a href="{{ url_for('admin_get_forms') }}" style="color: #10b981;">/admin/get_forms</a> endpoint to see all records (JSON).</p>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Helper toast (same as base_admin)
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <span class="message">${message}</span>
+            <button class="close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+    }
+
+    // Load stats
+    async function loadStats() {
+        try {
+            const response = await fetch('/admin/get_stats');
+            const data = await response.json();
+            document.getElementById('statTotal').textContent = data.total_bundles ?? '0';
+            document.getElementById('statPaid').textContent = data.paid_bundles ?? '0';
+            document.getElementById('statPending').textContent = data.pending_bundles ?? '0';
+            document.getElementById('statRevenue').textContent = (data.total_revenue ?? 0).toLocaleString();
+        } catch (e) {
+            console.error('Failed to load stats', e);
+            showToast('Could not load statistics. Please refresh.', 'error');
+        }
+    }
+
+    // Load referral codes
+    async function loadReferralCodes() {
+        try {
+            const resp = await fetch('/admin/referral_codes');
+            const data = await resp.json();
+            const list = document.getElementById('referralCodesList');
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-secondary);">No referral codes yet. Create one above.</p>';
+                return;
+            }
+            let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+            html += `<thead><tr>
+                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Code</th>
+                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Marketer</th>
+                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Discount</th>
+                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Status</th>
+            </tr></thead><tbody>`;
+            data.forEach(c => {
+                html += `<tr>
+                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);"><code>${c.code}</code></td>
+                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">${c.marketer_name}</td>
+                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">KES ${c.discount_per_doc || 50}</td>
+                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">${c.active ? '✅ Active' : '❌ Inactive'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            list.innerHTML = html;
+        } catch(e) {
+            document.getElementById('referralCodesList').innerHTML = '<p style="color: #EF4444;">Failed to load codes.</p>';
+            showToast('Failed to load referral codes.', 'error');
+        }
+    }
+
+    // Toggle new code form
+    document.getElementById('showNewCodeForm')?.addEventListener('click', function() {
+        const form = document.getElementById('newCodeForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.getElementById('cancelCodeBtn')?.addEventListener('click', function() {
+        document.getElementById('newCodeForm').style.display = 'none';
+        document.getElementById('newCode').value = '';
+        document.getElementById('newMarketer').value = '';
+    });
+
+    // Save new referral code
+    document.getElementById('saveCodeBtn')?.addEventListener('click', async function() {
+        const code = document.getElementById('newCode').value.trim().toUpperCase();
+        const marketer = document.getElementById('newMarketer').value.trim();
+        if (!code || !marketer) {
+            showToast('Please fill both fields.', 'warning');
+            return;
+        }
+        try {
+            const resp = await fetch('/admin/referral_codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, marketer_name: marketer })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                showToast('Code created successfully!', 'success');
+                document.getElementById('newCodeForm').style.display = 'none';
+                document.getElementById('newCode').value = '';
+                document.getElementById('newMarketer').value = '';
+                loadReferralCodes(); // refresh list
+            } else {
+                showToast(data.error || 'Failed to create code.', 'error');
+            }
+        } catch(e) {
+            showToast('Network error.', 'error');
+        }
+    });
+
+    // Load everything on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStats();
+        loadReferralCodes();
+    });
+
+    // Refresh stats every 30 seconds
+    setInterval(loadStats, 30000);
+</script>
+{% endblock %}

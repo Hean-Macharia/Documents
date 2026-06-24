@@ -1,0 +1,173 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">⚙️ Admin Settings</h1>
+
+<form id="settingsForm" enctype="multipart/form-data">
+    <!-- ===== Medical Officer ===== -->
+    <div class="card">
+        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">🏥 Medical Officer</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="med_officer_name">Officer Name</label>
+                <input type="text" id="med_officer_name" value="{{ settings.medical_officer.officer_name or '' }}" />
+            </div>
+            <div class="form-group">
+                <label for="med_hospital_name">Hospital / Institution</label>
+                <input type="text" id="med_hospital_name" value="{{ settings.medical_officer.hospital_name or '' }}" />
+            </div>
+            <div class="form-group">
+                <label for="med_designation">Designation</label>
+                <input type="text" id="med_designation" value="{{ settings.medical_officer.designation or '' }}" />
+            </div>
+            <div class="form-group">
+                <label for="med_reg_number">Registration Number</label>
+                <input type="text" id="med_reg_number" value="{{ settings.medical_officer.reg_number or '' }}" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="med_signature">Signature (image)</label>
+            <input type="file" id="med_signature" accept="image/*" />
+            {% if settings.medical_officer.signature %}
+                <div style="margin-top: 0.5rem;">
+                    <img src="{{ settings.medical_officer.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
+                    <span style="font-size: 0.8rem; color: #64748b; margin-left: 0.5rem;">Current</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===== Sponsor ===== -->
+    <div class="card">
+        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">📝 Sponsor</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="spo_sponsor_name">Sponsor Name</label>
+                <input type="text" id="spo_sponsor_name" value="{{ settings.sponsor.sponsor_name or '' }}" />
+            </div>
+            <div class="form-group">
+                <label for="spo_sponsor_email">Email</label>
+                <input type="email" id="spo_sponsor_email" value="{{ settings.sponsor.sponsor_email or '' }}" />
+            </div>
+            <div class="form-group">
+                <label for="spo_sponsor_phone">Phone</label>
+                <input type="tel" id="spo_sponsor_phone" value="{{ settings.sponsor.sponsor_telephone or '' }}" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="spo_signature">Signature (image)</label>
+            <input type="file" id="spo_signature" accept="image/*" />
+            {% if settings.sponsor.signature %}
+                <div style="margin-top: 0.5rem;">
+                    <img src="{{ settings.sponsor.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
+                    <span style="font-size: 0.8rem; color: #64748b; margin-left: 0.5rem;">Current</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===== Commissioner ===== -->
+    <div class="card">
+        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">⚖️ Commissioner</h2>
+        <div class="form-group">
+            <label for="comm_name">Commissioner Name</label>
+            <input type="text" id="comm_name" value="{{ settings.commissioner.name or '' }}" />
+        </div>
+        <div class="form-group">
+            <label for="comm_signature">Signature (image)</label>
+            <input type="file" id="comm_signature" accept="image/*" />
+            {% if settings.commissioner.signature %}
+                <div style="margin-top: 0.5rem;">
+                    <img src="{{ settings.commissioner.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
+                    <span style="font-size: 0.8rem; color: #64748b; margin-left: 0.5rem;">Current</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+        <button type="submit" class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 2rem;">💾 Save Settings</button>
+        <button type="reset" class="btn btn-secondary">Reset Form</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // Helper to read file as base64
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Collect text inputs
+        const getVal = id => document.getElementById(id).value.trim();
+        const data = {
+            med_officer_name: getVal('med_officer_name'),
+            med_hospital_name: getVal('med_hospital_name'),
+            med_designation: getVal('med_designation'),
+            med_reg_number: getVal('med_reg_number'),
+            spo_sponsor_name: getVal('spo_sponsor_name'),
+            spo_sponsor_email: getVal('spo_sponsor_email'),
+            spo_sponsor_phone: getVal('spo_sponsor_phone'),
+            comm_name: getVal('comm_name'),
+        };
+
+        // Process signature files if new ones are selected
+        const sigFields = ['med_signature', 'spo_signature', 'comm_signature'];
+        for (const fieldId of sigFields) {
+            const input = document.getElementById(fieldId);
+            if (input.files && input.files.length > 0) {
+                try {
+                    const base64 = await readFileAsBase64(input.files[0]);
+                    // Map to expected key in backend
+                    const keyMap = {
+                        'med_signature': 'med_signature',
+                        'spo_signature': 'spo_signature',
+                        'comm_signature': 'comm_signature'
+                    };
+                    data[keyMap[fieldId]] = base64;
+                } catch (err) {
+                    showToast('Failed to read signature file.', 'error');
+                    return;
+                }
+            }
+        }
+
+        // Disable submit button to prevent double‑click
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Saving...';
+
+        try {
+            const response = await fetch('/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Settings saved successfully!', 'success');
+                // Optionally reload to show updated images
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast(result.error || 'Failed to save settings.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '💾 Save Settings';
+        }
+    });
+</script>
+{% endblock %}

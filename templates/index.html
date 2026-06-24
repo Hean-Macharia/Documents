@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Supporting Documents — Premium Digital Experience</title>
+    
+    <!-- Security & SEO Meta Tags -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="description" content="Generate official medical forms, sponsorship letters, and single parent certifications instantly.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    
+    <style>
+        /* (same as before – unchanged) */
+        :root {
+            --emerald: #10B981;
+            --emerald-glow: rgba(16, 185, 129, 0.25);
+            --teal: #14B8A6;
+            --gold: #F59E0B;
+            --bg: #F7F9FC;
+            --surface: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --border: rgba(15, 23, 42, 0.08);
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+            --shadow-md: 0 2px 12px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 8px 28px rgba(15, 23, 42, 0.08);
+            --shadow-xl: 0 16px 40px rgba(15, 23, 42, 0.10);
+            --radius-sm: 10px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --transition-fast: 180ms cubic-bezier(0.4,0,0.2,1);
+            --transition-base: 280ms cubic-bezier(0.4,0,0.2,1);
+            --transition-bounce: 420ms cubic-bezier(0.22,1,0.36,1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
+        body { font-family:var(--font); background:var(--bg); color:var(--text-primary); line-height:1.6; min-height:100vh; overflow-x:hidden; }
+        .container { max-width:1200px; margin:0 auto; padding:0 var(--space-lg); }
+        .hidden { display:none!important; }
+
+        /* Navbar */
+        .navbar { position:fixed; top:0; left:0; right:0; z-index:1000; padding:var(--space-md) 0; background:rgba(255,255,255,0.8); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); transition: box-shadow 0.25s ease; }
+        .navbar.scrolled { box-shadow:var(--shadow-sm); }
+        .navbar .container { display:flex; align-items:center; justify-content:space-between; }
+        .nav-brand { display:flex; align-items:center; gap:var(--space-sm); text-decoration:none; font-weight:700; font-size:1.25rem; color:var(--text-primary); }
+        .nav-brand .logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--emerald),var(--teal)); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.9rem; }
+        .nav-links { display:flex; gap:var(--space-xl); list-style:none; }
+        .nav-links a { text-decoration:none; color:var(--text-secondary); font-weight:500; font-size:0.9rem; transition:var(--transition-fast); }
+        .nav-links a:hover { color:var(--text-primary); }
+        .nav-actions { display:flex; align-items:center; gap:var(--space-md); }
+        .nav-toggle { display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:var(--space-sm); border-radius:var(--radius-sm); }
+        .nav-toggle span { display:block; width:24px; height:2px; background:var(--text-primary); border-radius:var(--radius-full); transition:var(--transition-fast); }
+        .nav-toggle.active span:nth-child(1) { transform:rotate(45deg) translate(5px,5px); }
+        .nav-toggle.active span:nth-child(2) { opacity:0; }
+        .nav-toggle.active span:nth-child(3) { transform:rotate(-45deg) translate(5px,-5px); }
+        @media (max-width:768px) {
+            .nav-toggle { display:flex; }
+            .nav-links { position:absolute; top:100%; left:0; right:0; background:var(--surface); flex-direction:column; padding:var(--space-lg); gap:var(--space-md); border-bottom:1px solid var(--border); transform:translateY(-10px); opacity:0; pointer-events:none; transition:var(--transition-base); box-shadow:var(--shadow-lg); }
+            .nav-links.open { transform:translateY(0); opacity:1; pointer-events:all; }
+            .nav-actions .btn { display:none; }
+        }
+
+        /* Buttons */
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--space-sm); padding:11px 26px; border:none; border-radius:var(--radius-full); font-family:var(--font); font-weight:600; font-size:0.9rem; cursor:pointer; transition:var(--transition-base); text-decoration:none; position:relative; overflow:hidden; }
+        .btn-primary { background:linear-gradient(135deg,var(--emerald),var(--teal)); color:white; box-shadow:0 2px 10px rgba(16,185,129,0.25); }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(16,185,129,0.3); }
+        .btn-primary:active { transform:translateY(0); }
+        .btn-secondary { background:var(--surface); color:var(--text-primary); border:1px solid var(--border); }
+        .btn-secondary:hover { background:var(--bg); border-color:rgba(15,23,42,0.14); }
+        .btn-danger { background:#EF4444; color:white; }
+        .btn-danger:hover { background:#DC2626; }
+        .btn-lg { padding:14px 32px; font-size:1rem; }
+        .btn-sm { padding:7px 16px; font-size:0.8rem; }
+        .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none!important; }
+
+        /* Hero */
+        .hero { padding:110px 0 var(--space-3xl); min-height:auto; display:flex; align-items:center; }
+        .hero-content { animation:heroFadeIn 0.7s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes heroFadeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .hero-badge { display:inline-flex; align-items:center; gap:var(--space-sm); padding:4px 16px 4px 4px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.18); border-radius:var(--radius-full); font-size:0.8rem; font-weight:500; color:var(--emerald); margin-bottom:var(--space-lg); }
+        .hero-badge .dot { width:7px; height:7px; background:var(--emerald); border-radius:50%; animation:pulse-dot 2.4s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.85)} }
+        .hero h1 { font-size:2.85rem; font-weight:700; line-height:1.15; letter-spacing:-0.01em; margin-bottom:var(--space-md); }
+        .hero h1 .highlight { background:linear-gradient(135deg,var(--emerald),var(--teal)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero p { font-size:1.05rem; color:var(--text-secondary); max-width:600px; margin-bottom:var(--space-lg); }
+        .hero-actions { display:flex; gap:var(--space-md); flex-wrap:wrap; }
+        .hero-stats { display:flex; gap:var(--space-2xl); margin-top:var(--space-xl); padding-top:var(--space-lg); border-top:1px solid var(--border); }
+        .hero-stats .stat { display:flex; flex-direction:column; }
+        .hero-stats .stat .number { font-size:1.6rem; font-weight:700; }
+        .hero-stats .stat .label { font-size:0.8rem; color:var(--text-secondary); }
+
+        @media (max-width:640px) { .hero h1 { font-size:1.9rem; } .hero-stats { flex-direction:column; gap:var(--space-md); } .hero-actions { flex-direction:column; } .hero-actions .btn { width:100%; } }
+
+        /* Sections */
+        .section { padding:var(--space-3xl) 0; }
+        .section-label { display:inline-block; font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--emerald); margin-bottom:var(--space-sm); }
+        .section-title { font-size:2.1rem; font-weight:700; letter-spacing:-0.01em; margin-bottom:var(--space-sm); }
+        .section-subtitle { font-size:1.02rem; color:var(--text-secondary); max-width:600px; line-height:1.65; }
+        .features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-lg); margin-top:var(--space-2xl); }
+        .feature-card { background:var(--surface); border-radius:var(--radius-lg); padding:var(--space-lg); border:1px solid var(--border); transition:var(--transition-base); }
+        .feature-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:rgba(16,185,129,0.25); }
+        .feature-card .icon { width:46px; height:46px; background:rgba(16,185,129,0.08); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:var(--space-md); }
+        .feature-card h3 { font-size:1.05rem; font-weight:600; margin-bottom:var(--space-xs); }
+        .feature-card p { color:var(--text-secondary); font-size:0.92rem; }
+        @media (max-width:1024px) { .features-grid { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:640px) { .features-grid { grid-template-columns:1fr; } }
+
+        /* Form Type Cards */
+        .form-types-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-lg); margin-top:var(--space-2xl); }
+        .form-type-card { background:var(--surface); border-radius:var(--radius-lg); padding:var(--space-lg); border:1.5px solid var(--border); transition:var(--transition-base); cursor:pointer; position:relative; }
+        .form-type-card:hover { border-color:rgba(16,185,129,0.4); transform:translateY(-2px); box-shadow:var(--shadow-md); }
+        .form-type-card.selected { border-color:var(--emerald); background:rgba(16,185,129,0.04); box-shadow:0 0 0 3px var(--emerald-glow); }
+        .form-type-card .icon { font-size:2rem; display:block; margin-bottom:var(--space-sm); }
+        .form-type-card h3 { font-weight:600; margin-bottom:var(--space-xs); }
+        .form-type-card .price-tag { display:inline-block; margin-top:var(--space-sm); padding:4px 12px; background:rgba(16,185,129,0.1); color:var(--emerald); border-radius:var(--radius-full); font-size:0.8rem; font-weight:600; }
+        .form-type-card .check { position:absolute; top:var(--space-md); right:var(--space-md); width:26px; height:26px; background:var(--emerald); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:0.85rem; opacity:0; transform:scale(0.5); transition:var(--transition-bounce); }
+        .form-type-card.selected .check { opacity:1; transform:scale(1); }
+        @media (max-width:1024px) { .form-types-grid { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:640px) { .form-types-grid { grid-template-columns:1fr; } }
+
+        /* GLOBAL FORM STYLES */
+        .form-group { margin-bottom:var(--space-md); }
+        .form-group label { display:block; font-size:0.83rem; font-weight:500; margin-bottom:var(--space-xs); color:var(--text-secondary); }
+        .form-group .input-wrap { position:relative; }
+        .form-group input, .form-group select, .form-group textarea {
+            width:100%; max-width:100%; padding:12px 16px; border:1.5px solid var(--border); border-radius:var(--radius-md);
+            font-family:var(--font); font-size:0.95rem; background:var(--surface); color:var(--text-primary);
+            transition:var(--transition-fast); outline:none;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--emerald); box-shadow:0 0 0 3px var(--emerald-glow); }
+        .form-group input.error, .form-group select.error, .form-group textarea.error { border-color:#EF4444; box-shadow:0 0 0 3px rgba(239,68,68,0.15); }
+        .form-group input[readonly], .form-group input[disabled] { background:var(--bg); color:var(--text-secondary); cursor:not-allowed; }
+        .form-group .error-text { font-size:0.8rem; color:#EF4444; margin-top:var(--space-xs); display:none; }
+        .form-group .error-text.show { display:block; animation:fadeInDown 0.2s ease; }
+        @keyframes fadeInDown { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+        /* SIGNATURE PAD */
+        .signature-pad-container { border: 2px solid #e5e7eb; border-radius: var(--radius-md); background: #ffffff; position: relative; }
+        .canvas-wrapper { position: relative; border-bottom: 2px solid #e5e7eb; background: #fafafa; cursor: crosshair; }
+        .canvas-wrapper canvas { display: block; width: 100%; height: 150px; touch-action: none; }
+        .signature-line { position: absolute; bottom: 30px; left: 20px; right: 20px; height: 1px; background: #e5e7eb; pointer-events: none; }
+        .canvas-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9ca3af; font-size: 16px; pointer-events: none; }
+        .canvas-label.hidden { display: none; }
+        .signature-pad-container .signature-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-sm); padding: 0 var(--space-sm) var(--space-sm); }
+        .signature-pad-container .signature-status { font-size: 0.75rem; color: var(--text-secondary); padding: var(--space-xs) var(--space-sm); display: flex; align-items: center; gap: var(--space-sm); }
+        .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+        .dot.empty { background: #d1d5db; }
+        .dot.filled { background: var(--emerald); }
+        @media (max-width:640px) { .canvas-wrapper canvas { height: 120px; } }
+
+        /* Details Modal */
+        .details-modal { position:fixed; inset:0; z-index:2000; background:rgba(15,23,42,0.55); backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; }
+        .details-modal.active { opacity:1; pointer-events:all; }
+        .details-modal .modal-panel { background:var(--surface); border-radius:var(--radius-xl) var(--radius-xl) 0 0; width:100%; max-width:900px; max-height:90vh; overflow-y:auto; padding:var(--space-xl); box-shadow:var(--shadow-xl); transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+        .details-modal.active .modal-panel { transform:translateY(0); }
+        .details-modal .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-lg); flex-wrap:wrap; gap:var(--space-sm); }
+        .details-modal .modal-header h2 { font-size:1.35rem; font-weight:700; }
+        .details-modal .modal-header .step-badge { background:rgba(16,185,129,0.1); color:var(--emerald); padding:4px 12px; border-radius:20px; font-size:0.78rem; font-weight:600; }
+        .doc-tabs { display:flex; gap:var(--space-sm); margin-bottom:var(--space-lg); border-bottom:1px solid var(--border); padding-bottom:var(--space-sm); overflow-x:auto; }
+        .doc-tab { padding:8px 18px; border:none; background:var(--bg); font-family:var(--font); font-size:0.88rem; font-weight:500; color:var(--text-secondary); cursor:pointer; border-radius:var(--radius-full); transition:var(--transition-fast); white-space:nowrap; }
+        .doc-tab:hover { color:var(--text-primary); }
+        .doc-tab.active { background:var(--emerald); color:white; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-md); }
+        #formContent > div { animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .details-modal .form-actions { display:flex; gap:var(--space-md); margin-top:var(--space-xl); flex-wrap:wrap; }
+        .details-modal .form-actions .btn { flex:1; min-width:150px; }
+        @media (max-width:640px) { .details-modal .modal-panel { padding:var(--space-lg); } .form-row { grid-template-columns:1fr; } .details-modal .form-actions { flex-direction:column; } .details-modal .form-actions .btn { width:100%; } }
+
+        /* Cart */
+        .cart-summary { background:var(--surface); border-radius:var(--radius-lg); padding:var(--space-lg); border:1.5px solid var(--emerald); margin-top:var(--space-lg); box-shadow:var(--shadow-md); animation:slideUp 0.35s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-md); flex-wrap:wrap; gap:var(--space-sm); }
+        .cart-item { display:flex; justify-content:space-between; align-items:center; padding:var(--space-sm) 0; border-bottom:1px solid var(--border); }
+        .cart-total { display:flex; justify-content:space-between; padding-top:var(--space-md); border-top:2px solid var(--border); font-size:1.1rem; font-weight:600; flex-wrap:wrap; gap:var(--space-sm); }
+        .cart-total .total-amount { color:var(--emerald); font-size:1.3rem; }
+        .cart-actions { display:flex; gap:var(--space-md); margin-top:var(--space-md); flex-wrap:wrap; }
+        .cart-actions .btn { flex:1; }
+        @media (max-width:640px) {
+            .cart-actions { flex-direction:column; }
+            .cart-actions .btn { width:100%; }
+            .cart-summary { padding:var(--space-md); }
+        }
+
+        /* Modals */
+        .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.55); backdrop-filter:blur(8px); z-index:3000; display:flex; align-items:center; justify-content:center; padding:var(--space-lg); opacity:0; pointer-events:none; transition:var(--transition-base); }
+        .modal-overlay.active { opacity:1; pointer-events:all; }
+        .modal-content { background:var(--surface); border-radius:var(--radius-xl); max-width:480px; width:100%; padding:var(--space-xl); transform:scale(0.97) translateY(10px); transition:var(--transition-bounce); box-shadow:var(--shadow-xl); position:relative; max-height:90vh; overflow-y:auto; }
+        .modal-overlay.active .modal-content { transform:scale(1) translateY(0); }
+        .modal-content .modal-close { position:absolute; top:var(--space-md); right:var(--space-md); background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary); }
+
+        /* ===== PREVIEW MODAL — MOBILE-FIRST & PROTECTED ===== */
+        .preview-modal .modal-content { max-width: 900px; padding: 0; width: 95vw; max-height: 95vh; }
+        .preview-modal .modal-header { padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm); background: var(--surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; position: sticky; top: 0; z-index: 20; }
+        .preview-modal .modal-header h3 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: var(--space-sm); }
+        .preview-modal .modal-body { padding: var(--space-md); min-height: 350px; background: #f0f0f0; position: relative; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .preview-wrapper { position: relative; width: 100%; height: 65vh; min-height: 340px; max-height: 700px; background: #f0f0f0; border-radius: var(--radius-sm); overflow: hidden; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        @media (max-width: 640px) { .preview-wrapper { height: 55vh; min-height: 280px; max-height: 550px; } }
+        @media (max-width: 420px) { .preview-wrapper { height: 45vh; min-height: 220px; max-height: 450px; } }
+        .preview-wrapper object { width: 100%; height: 100%; border: none; pointer-events: none; touch-action: none; -webkit-touch-callout: none; user-select: none; }
+        .preview-blocker { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: transparent; cursor: not-allowed; touch-action: none; pointer-events: all; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; display: none; }
+        .preview-blocker.active { display: block; }
+        .preview-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-28deg); font-size: clamp(2.4rem, 8vw, 4.5rem); font-weight: 800; color: rgba(16, 185, 129, 0.10); pointer-events: none; z-index: 5; white-space: nowrap; text-transform: uppercase; letter-spacing: 6px; font-family: var(--font); text-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .preview-watermark span { display: inline-block; opacity: 0.6; }
+        .preview-badge { position: absolute; bottom: 14px; right: 18px; z-index: 15; font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.55); background: rgba(0,0,0,0.35); padding: 4px 14px; border-radius: 30px; pointer-events: none; letter-spacing: 0.4px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.08); text-transform: uppercase; }
+        .preview-badge::before { content: '🔒 '; font-size: 0.7rem; }
+        .preview-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 250px; color: var(--text-secondary); gap: var(--space-md); }
+        .preview-loading .spinner { width: 44px; height: 44px; border: 4px solid var(--border); border-top-color: var(--emerald); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .preview-loading p { font-size: 0.95rem; font-weight: 500; }
+        .preview-error { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 250px; color: #EF4444; text-align: center; padding: var(--space-lg); }
+        .preview-error .icon { font-size: 3rem; margin-bottom: var(--space-sm); }
+        .preview-error h4 { font-weight: 600; margin-bottom: var(--space-xs); }
+        .preview-error p { color: var(--text-secondary); font-size: 0.9rem; max-width: 320px; }
+        .preview-modal .modal-footer { padding: var(--space-md) var(--space-lg); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: var(--space-md); background: var(--surface); border-radius: 0 0 var(--radius-xl) var(--radius-xl); flex-wrap: wrap; }
+        .preview-modal .modal-footer .btn { min-width: 120px; }
+        @media (max-width: 480px) { .preview-modal .modal-footer { flex-direction: column; } .preview-modal .modal-footer .btn { width: 100%; } .preview-modal .modal-content { width: 98vw; } .preview-modal .modal-header h3 { font-size: 0.95rem; } }
+
+        /* ===== PDF.js canvas container (mobile inline) ===== */
+        .pdf-canvas-container { width: 100%; max-height: 500px; overflow-y: auto; background: #fff; -webkit-overflow-scrolling: touch; }
+        .pdf-canvas-container canvas { width: 100%; height: auto; display: block; margin-bottom: 8px; pointer-events: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; image-rendering: auto; }
+
+        /* Fallback card when PDF.js fails on mobile */
+        .mobile-preview-card { padding: var(--space-lg); text-align: center; background: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+        .mobile-preview-card .doc-icon { font-size: 3rem; margin-bottom: var(--space-sm); }
+        .mobile-preview-card h3 { font-size: 1.2rem; margin-bottom: var(--space-xs); }
+        .mobile-preview-card .meta { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: var(--space-md); }
+        .mobile-preview-card .info-box { background: var(--bg); border-radius: var(--radius-sm); padding: var(--space-md); margin-bottom: var(--space-md); text-align: left; }
+        .mobile-preview-card .info-row { display: flex; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid var(--border); }
+        .mobile-preview-card .info-row:last-child { border-bottom: none; }
+        .mobile-preview-card .info-label { color: var(--text-secondary); font-size: 0.85rem; }
+        .mobile-preview-card .info-value { font-weight: 500; }
+        .mobile-preview-card .open-btn { display: inline-block; padding: 10px 30px; background: var(--emerald); color: white; border-radius: var(--radius-full); text-decoration: none; font-weight: 600; margin-top: var(--space-sm); }
+        .mobile-preview-card .hint { color: var(--text-secondary); font-size: 0.75rem; margin-top: var(--space-sm); }
+
+        .toast-container { position:fixed; bottom:var(--space-xl); right:var(--space-xl); z-index:9999; display:flex; flex-direction:column; gap:var(--space-sm); max-width:400px; }
+        .toast { background:var(--surface); border-radius:var(--radius-md); padding:var(--space-md) var(--space-lg); box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:var(--space-md); animation:slideUp 0.3s cubic-bezier(0.22,1,0.36,1); border:1px solid var(--border); }
+
+        .footer { padding:var(--space-2xl) 0; border-top:1px solid var(--border); margin-top:var(--space-2xl); }
+        .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:var(--space-2xl); }
+        @media (max-width:768px) { .footer-grid { grid-template-columns:1fr 1fr; } }
+        @media (max-width:480px) { .footer-grid { grid-template-columns:1fr; } }
+
+        /* ===== RETRIEVE SECTION MOBILE FIXES ===== */
+        .retrieve-section .form-group { flex:1; min-width:0; }
+        #retrieveForm { width:100%; }
+        #retrieveForm > div { display:flex; gap:var(--space-md); align-items:flex-end; flex-wrap:wrap; }
+        @media (max-width:640px) {
+            #retrieveForm > div { flex-direction:column; align-items:stretch; }
+            #retrieveForm > div .form-group { flex:1 1 auto; width:100%; }
+            #retrieveForm > div .btn { width:100%; }
+        }
+
+        /* ===== REFERRAL CODE INPUT FIXES ===== */
+        #referralCodeInput {
+            flex: 1;
+            min-width: 0;
+            max-width: 100%;
+            padding: 0.4rem 0.6rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            background: var(--surface);
+            color: var(--text-primary);
+            outline: none;
+            transition: var(--transition-fast);
+        }
+        #referralCodeInput:focus {
+            border-color: var(--emerald);
+            box-shadow: 0 0 0 3px var(--emerald-glow);
+        }
+        .referral-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .referral-row label {
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .referral-row .btn {
+            flex-shrink: 0;
+        }
+        @media (max-width:480px) {
+            .referral-row { flex-wrap: wrap; }
+            .referral-row label { width:100%; }
+            #referralCodeInput { flex:1 1 100%; }
+            .referral-row .btn { width:100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- ===== PREVIEW MODAL (fully protected) ===== -->
+    <div class="modal-overlay preview-modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
+        <div class="modal-content" oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
+            <div class="modal-header">
+                <h3 id="previewModalTitle">📄 <span>Document Preview</span></h3>
+                <button class="modal-close" id="previewModalClose" aria-label="Close preview">&times;</button>
+            </div>
+            <div class="modal-body" oncontextmenu="return false" onselectstart="return false" ondragstart="return false" oncopy="return false" oncut="return false" onpaste="return false" ontouchstart="return true" ontouchend="return true">
+                <div class="preview-wrapper" id="previewWrapper">
+                    <div class="preview-watermark" aria-hidden="true"><span>PREVIEW</span> <span>·</span> <span>ONLY</span></div>
+                    <div id="previewContent" style="width:100%;height:100%;position:relative;z-index:1;">
+                        <div class="preview-loading"><div class="spinner"></div><p>Generating preview…</p></div>
+                    </div>
+                    <div class="preview-blocker" id="previewBlocker"></div>
+                    <div class="preview-badge" aria-hidden="true">PAY TO GET A STAMPED COPY</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="previewModalCloseBtn">Close</button>
+                <button class="btn btn-primary" id="previewModalPayBtn">Proceed to Payment →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Modal -->
+    <div class="modal-overlay" id="phoneModal" role="dialog" aria-modal="true" aria-labelledby="phoneModalTitle">
+        <div class="modal-content">
+            <button class="modal-close" id="phoneModalClose" aria-label="Close">&times;</button>
+            <div style="font-size:3rem;text-align:center;">📱</div>
+            <h2 id="phoneModalTitle" style="text-align:center;margin-bottom:var(--space-sm)">Enter Phone Number</h2>
+            <p style="text-align:center;color:var(--text-secondary)">We'll send an M-Pesa STK push for <strong id="modalTotalAmount">KES 300</strong></p>
+            <form id="phoneForm" novalidate>
+                <div class="form-group"><label for="phoneInput">Phone Number</label><div class="input-wrap"><input type="tel" id="phoneInput" placeholder="0712345678" required autofocus /></div><div class="error-text" id="phoneError">Please enter a valid phone number</div></div>
+                <div style="display:flex;gap:var(--space-md);justify-content:center;margin-top:var(--space-lg); flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary" id="phoneModalCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="phoneSubmitBtn">Pay Now →</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div class="modal-overlay" id="processingModal" role="dialog" aria-modal="true" aria-labelledby="processingModalTitle">
+        <div class="modal-content" style="text-align:center;">
+            <div style="font-size:3rem;">⏳</div>
+            <h2 id="processingModalTitle" style="margin:var(--space-md) 0">Processing Payment</h2>
+            <p style="color:var(--text-secondary)">Check your phone and enter M-Pesa PIN to complete.</p>
+            <div class="spinner" style="width:60px;height:60px;border-width:4px;margin:20px auto;"></div>
+            <p style="color:var(--text-secondary);font-size:0.9rem;">Waiting for confirmation...</p>
+            <button class="btn btn-secondary" id="processingCancelBtn" style="margin-top:var(--space-lg)">Cancel</button>
+            <div id="manualCheckHint" style="margin-top:var(--space-md); display:none;">
+                <p style="color:var(--text-secondary); font-size:0.85rem;">Already paid? Let's check again.</p>
+                <button class="btn btn-primary" id="manualCheckBtn">🔄 Check Payment Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Verify Modal -->
+    <div class="modal-overlay" id="manualVerifyModal" role="dialog" aria-modal="true" aria-labelledby="manualVerifyTitle">
+        <div class="modal-content">
+            <button class="modal-close" id="manualVerifyClose" aria-label="Close">&times;</button>
+            <span class="modal-icon" style="font-size:3rem;display:block;text-align:center;">⏰</span>
+            <h2 id="manualVerifyTitle" class="modal-title">Payment Taking Longer</h2>
+            <p class="modal-subtitle">Your payment might have been deducted already. Click below to verify.</p>
+            <div style="margin:var(--space-lg) 0;">
+                <button class="btn btn-primary" id="manualVerifyBtn" style="width:100%;">🔄 I've Paid – Verify Now</button>
+            </div>
+            <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;">or</p>
+            <div style="margin:var(--space-md) 0;">
+                <button class="btn btn-secondary" id="manualVerifyEmailBtn" style="width:100%;">📧 Retrieve by Email</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
+        <div class="modal-content" style="text-align:center;">
+            <button class="modal-close" id="successModalClose" aria-label="Close">&times;</button>
+            <div style="width:80px;height:80px;background:var(--emerald);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:2.5rem;color:white;">✓</div>
+            <h2 id="successModalTitle" style="margin:var(--space-md) 0">Payment Successful, <span id="successStudentName">Student</span>!</h2>
+            <p style="color:var(--text-secondary)">Your documents are ready for download.</p>
+            <div id="successDocList" style="display:flex;flex-direction:column;gap:var(--space-sm);align-items:center;margin:var(--space-md) 0;"></div>
+            <div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--space-md);text-align:left;font-size:0.9rem;">
+                <div style="display:flex;justify-content:space-between;"><span>Bundle ID:</span><strong id="successBundleId">-</strong></div>
+                <div style="display:flex;justify-content:space-between;"><span>Transaction:</span><strong id="successTxCode">-</strong></div>
+                <div style="display:flex;justify-content:space-between;"><span>Total Paid:</span><strong id="successTotalAmount">KES 0</strong></div>
+            </div>
+            <p style="font-size:0.85rem;color:var(--text-secondary)">📧 Documents also sent to your email.</p>
+            <div style="display:flex;gap:var(--space-md);justify-content:center;margin-top:var(--space-lg); flex-wrap:wrap;">
+                <button class="btn btn-secondary" id="successModalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal (Step 2) -->
+    <div class="details-modal" id="detailsModal" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <div>
+                    <h2 id="detailsModalTitle">📝 Complete Your Details</h2>
+                    <span class="step-badge">Step 2 of 3</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="detailsBackBtn">← Back to Selection</button>
+            </div>
+            <div class="doc-tabs" id="docTabs"></div>
+            <div id="formContent"></div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="previewBtn">👁 Preview Current Document</button>
+                <button type="button" class="btn btn-primary" id="payBtn">Pay & Generate All →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a>
+            <ul class="nav-links" id="navLinks"><li><a href="#features">Features</a></li><li><a href="#forms">Forms</a></li><li><a href="#retrieve">Retrieve</a></li><li><a href="/admin">Admin</a></li></ul>
+            <div class="nav-actions"><a href="#forms" class="btn btn-primary btn-sm">Get Started →</a><button class="nav-toggle" id="navToggle" aria-label="Toggle navigation"><span></span><span></span><span></span></button></div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge"><span class="dot"></span> Now available — Digital Document Service</div>
+                <h1>Generate Your <span class="highlight">Supporting Documents</span> Instantly</h1>
+                <p>Official medical forms, sponsorship letters, and single parent certifications. Select multiple and pay once.</p>
+                <div class="hero-actions"><a href="#forms" class="btn btn-primary btn-lg">Start Now →</a><a href="#features" class="btn btn-secondary btn-lg">Learn More</a></div>
+                <div class="hero-stats">
+                    <div class="stat"><span class="number" id="statDocs">0</span><span class="label">Documents Generated</span></div>
+                    <div class="stat"><span class="number" id="statUsers">0</span><span class="label">Happy Users</span></div>
+                    <div class="stat"><span class="number">300</span><span class="label">KES per Document</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features"><div class="container">
+        <div class="text-center reveal"><span class="section-label">Features</span><h2 class="section-title">Why Choose Supporting Docs</h2><p class="section-subtitle">Modern, secure, efficient document generation.</p></div>
+        <div class="features-grid stagger" id="featuresGrid">
+            <div class="feature-card"><div class="icon">⚡</div><h3>Lightning Fast</h3><p>Under 3 minutes to generate.</p></div>
+            <div class="feature-card"><div class="icon">🔒</div><h3>Secure & Private</h3><p>Enterprise-grade encryption.</p></div>
+            <div class="feature-card"><div class="icon">📱</div><h3>Mobile Ready</h3><p>Works on any device.</p></div>
+            <div class="feature-card"><div class="icon">💳</div><h3>M-Pesa Integration</h3><p>Instant STK push payment.</p></div>
+            <div class="feature-card"><div class="icon">📧</div><h3>Email Delivery</h3><p>Documents sent instantly.</p></div>
+            <div class="feature-card"><div class="icon">🔄</div><h3>Easy Retrieval</h3><p>Access anytime with email.</p></div>
+        </div>
+    </div></section>
+
+    <!-- Form Selection -->
+    <section class="section" id="forms"><div class="container">
+        <div class="text-center reveal"><span class="section-label">Documents</span><h2 class="section-title">Choose Your Documents</h2><p class="section-subtitle">Select one or more, then click Continue to fill in details.</p></div>
+        <div class="form-types-grid stagger" id="formTypesGrid">
+            <div class="form-type-card" data-type="medical"><span class="check">✓</span><span class="icon">🏥</span><h3>Medical Form</h3><p>Official medical examination form.</p><span class="price-tag">KES 400</span></div>
+            <div class="form-type-card" data-type="sponsorship"><span class="check">✓</span><span class="icon">📝</span><h3>Sponsorship Letter</h3><p>Sponsorship confirmation letter.</p><span class="price-tag">KES 300</span></div>
+            <div class="form-type-card" data-type="single_parent"><span class="check">✓</span><span class="icon">👨‍👧</span><h3>Single Parent Certification</h3><p>Self-certification for single parent status.</p><span class="price-tag">KES 300</span></div>
+        </div>
+
+        <!-- ====== CART SUMMARY WITH REFERRAL CODE ====== -->
+        <div class="cart-summary" id="cartSummary" style="display:none;">
+            <div class="cart-header">
+                <h3>🛒 Your Selection</h3>
+                <span class="cart-count" id="cartCount">0 documents</span>
+            </div>
+            <div class="cart-items" id="cartItems"></div>
+
+            <!-- Referral Code Input (mobile‑friendly) -->
+            <div class="referral-row">
+                <label for="referralCodeInput">Referral Code</label>
+                <input type="text" id="referralCodeInput" placeholder="Leave blank if not referred" />
+                <button type="button" id="applyReferralBtn" class="btn btn-secondary btn-sm">Apply</button>
+            </div>
+
+            <div class="cart-total">
+                <span>Total:</span>
+                <span class="total-amount" id="cartTotal">KES 0</span>
+            </div>
+
+            <div class="cart-actions">
+                <button class="btn btn-danger" id="clearCartBtn">Clear All</button>
+                <button class="btn btn-primary" id="continueBtn">Continue to Details →</button>
+            </div>
+        </div>
+    </div></section>
+
+    <!-- Retrieve -->
+    <section class="section" id="retrieve"><div class="container">
+        <div class="text-center reveal"><span class="section-label">Retrieve</span><h2 class="section-title">Get Your Documents</h2><p class="section-subtitle">Enter your email to download all PDFs instantly.</p></div>
+        <div class="retrieve-section reveal" style="background:var(--surface);border-radius:var(--radius-xl);padding:var(--space-2xl);border:1px solid var(--border);">
+            <form id="retrieveForm" novalidate>
+                <div>
+                    <div class="form-group" style="flex:1; min-width:0;">
+                        <label for="retrieveEmail">Email Address</label>
+                        <div class="input-wrap">
+                            <input type="email" id="retrieveEmail" placeholder="you@example.com" required />
+                        </div>
+                        <div class="error-text" id="retrieveError">Please enter a valid email</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="retrieveBtn">Retrieve Documents →</button>
+                </div>
+            </form>
+            <div id="retrieveResult" style="display:none;margin-top:var(--space-lg);">
+                <div style="background:var(--bg);border-radius:var(--radius-md);padding:var(--space-lg);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:var(--space-md);">
+                        <div>
+                            <strong id="retrieveDocName" style="font-size:1.2rem;"></strong>
+                            <p style="color:var(--text-secondary);font-size:0.9rem;" id="retrieveDocId"></p>
+                            <div id="retrieveDocList" style="display:flex;flex-direction:column;gap:var(--space-sm);margin-top:var(--space-sm);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div></section>
+
+    <!-- Footer -->
+    <footer class="footer"><div class="container"><div class="footer-grid"><div><a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a><p style="color:var(--text-secondary);font-size:0.9rem;">Official supporting document generation platform.</p></div><div><h4 style="color:var(--text-secondary);">Documents</h4><ul><li><a onclick="toggleDocument('medical')" style="cursor:pointer;">Medical Form</a></li><li><a onclick="toggleDocument('sponsorship')" style="cursor:pointer;">Sponsorship Letter</a></li><li><a onclick="toggleDocument('single_parent')" style="cursor:pointer;">Single Parent Cert</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Support</h4><ul><li><a href="#retrieve">Retrieve</a></li><li><a href="/admin">Admin</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Legal</h4><ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div></div><div style="display:flex;justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--border);"><span>&copy; 2026 Supporting Documents. All rights reserved.</span><span>Made with ❤ in Kenya</span></div></div></footer>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const PRICES = { medical: 400, sponsorship: 300, single_parent: 300 };
+
+            const FORM_TYPES = {
+                medical: {
+                    label: 'Medical Form', icon: '🏥',
+                    fields: [
+                        {id:'student_name',label:'Full Name',type:'text',required:true,placeholder:'Enter your full name'},
+                        {id:'national_id',label:'National ID',type:'text',required:false,placeholder:'Enter your national ID (optional)'},
+                        {id:'university',label:'University/Institution',type:'text',required:true,placeholder:'e.g., University of Nairobi'},
+                        {id:'kcse_index',label:'KCSE Index Number',type:'text',required:true,placeholder:'e.g., 1234567890'},
+                        {id:'admission_number',label:'Admission Number',type:'text',required:true,placeholder:'e.g., ADM/2024/001'},
+                        {id:'telephone',label:'Phone Number',type:'tel',required:true,placeholder:'e.g., 0712345678'},
+                        {id:'email',label:'Email Address',type:'email',required:true,placeholder:'you@example.com'}
+                    ]
+                },
+                sponsorship: {
+                    label: 'Sponsorship Letter', icon: '📝',
+                    fields: [
+                        {id:'student_name',label:'Full Name',type:'text',required:true,placeholder:'Enter your full name'},
+                        {id:'national_id',label:'National ID',type:'text',required:false,placeholder:'Enter your national ID (optional)'},
+                        {id:'university',label:'University/Institution',type:'text',required:true,placeholder:'e.g., University of Nairobi'},
+                        {id:'kcse_index',label:'KCSE Index Number',type:'text',required:true,placeholder:'e.g., 1234567890'},
+                        {id:'admission_number',label:'Admission Number',type:'text',required:true,placeholder:'e.g., ADM/2024/001'},
+                        {id:'telephone',label:'Phone Number',type:'tel',required:true,placeholder:'e.g., 0712345678'},
+                        {id:'email',label:'Email Address',type:'email',required:true,placeholder:'you@example.com'},
+                        {id:'sponsored_level',label:'Sponsored Level',type:'select',options:['Primary','Secondary','College'],required:true},
+                        {id:'sponsorship_covered',label:'Coverage',type:'text',required:false,default:'TUITION FEE',readonly:true},
+                        {id:'completed_duration',label:'Number of Years Sponsored',type:'text',required:true,placeholder:'e.g., 4 years'},
+                        {id:'student_sig',label:'Student Signature',type:'signature',required:false}
+                    ]
+                },
+                single_parent: {
+                    label: 'Single Parent Certification', icon: '👨‍👧',
+                    fields: [
+                        {id:'student_name',label:'Full Name',type:'text',required:true,placeholder:'Enter your full name'},
+                        {id:'national_id',label:'National ID',type:'text',required:false,placeholder:'Enter your national ID (optional)'},
+                        {id:'university',label:'University/Institution',type:'text',required:true,placeholder:'e.g., University of Nairobi'},
+                        {id:'kcse_index',label:'KCSE Index Number',type:'text',required:true,placeholder:'e.g., 1234567890'},
+                        {id:'admission_number',label:'Admission Number',type:'text',required:true,placeholder:'e.g., ADM/2024/001'},
+                        {id:'telephone',label:'Phone Number',type:'tel',required:true,placeholder:'e.g., 0712345678'},
+                        {id:'email',label:'Email Address',type:'email',required:true,placeholder:'you@example.com'},
+                        {id:'parent_name',label:'Parent/Guardian Name',type:'text',required:true,placeholder:'e.g., Jane Doe'},
+                        {id:'parent_id',label:'Parent ID Number',type:'text',required:true,placeholder:'e.g., 12345678'},
+                        {id:'parent_telephone',label:'Parent Phone',type:'tel',required:true,placeholder:'e.g., 0712345678'},
+                        {id:'relationship',label:'Relationship',type:'select',options:['Mother','Father'],required:true},
+                        {id:'marital_status',label:'Marital Status',type:'select',options:['Single','Separated','Divorce'],required:true},
+                        {id:'parent_sig',label:'Parent Signature',type:'signature',required:false}
+                    ]
+                }
+            };
+
+            const state = { selectedTypes:[], activeTab:null, signatureDataMap:{}, bundleId:null, checkoutRequestId:null, transactionCode:null, paymentInterval:null, paymentAttempts:0 };
+            const $ = s => document.querySelector(s);
+            const $$ = s => document.querySelectorAll(s);
+
+            // Global Error Handlers
+            window.addEventListener('unhandledrejection', function(event) {
+                console.error('Unhandled promise rejection:', event.reason);
+            });
+
+            // ========== TOAST WITH FLASH SUPPORT ==========
+            function showToast(msg, type='info') {
+                const icons = {success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+                const toast = document.createElement('div'); toast.className = `toast ${type}`;
+                toast.innerHTML = `<span class="icon">${icons[type]}</span><div class="content"><div class="title">${type.charAt(0).toUpperCase()+type.slice(1)}</div><div class="message">${msg}</div></div><button class="close" onclick="this.parentElement.remove()">&times;</button>`;
+                document.getElementById('toastContainer').appendChild(toast);
+                setTimeout(() => { if(toast.parentElement) toast.remove(); }, 5000);
+            }
+
+            // Check if response has flash message and display it
+            function handleFlash(responseData) {
+                if (responseData && responseData.flash) {
+                    let type = 'info';
+                    if (responseData.status === 'success' || responseData.paid === true) type = 'success';
+                    else if (responseData.status === 'error' || responseData.paid === false) type = 'error';
+                    else if (responseData.status === 'warning') type = 'warning';
+                    showToast(responseData.flash, type);
+                    return true;
+                }
+                return false;
+            }
+
+            // Override fetch to automatically handle flash messages
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                return originalFetch(url, options).then(response => {
+                    const cloned = response.clone();
+                    cloned.json().then(data => {
+                        if (data && data.flash) {
+                            handleFlash(data);
+                        }
+                    }).catch(() => {});
+                    return response;
+                });
+            };
+
+            function openModal(id) { 
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.classList.add('active'); 
+                    document.body.style.overflow='hidden';
+                }
+            }
+            function closeModal(id) { 
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.classList.remove('active'); 
+                    document.body.style.overflow='';
+                }
+            }
+
+            // ===== SIGNATURE PAD WITH CROPPING =====
+            class SignaturePad {
+                constructor(container, savedImage = null) {
+                    this.container = container;
+                    this.canvas = container.querySelector('canvas');
+                    if (!this.canvas) return;
+                    this.ctx = this.canvas.getContext('2d');
+                    this.isDrawing = false;
+                    this.lastX = 0;
+                    this.lastY = 0;
+                    this._hasDrawn = false;
+                    this._savedImage = savedImage;  // cropped image (data URL)
+                    this.clearBtn = container.querySelector('.signature-clear');
+                    this.statusDot = container.querySelector('.dot');
+                    this.statusText = container.querySelector('.status-text');
+                    this.hiddenInput = container.parentElement?.querySelector('input[type="hidden"]');
+                    this.label = container.querySelector('.canvas-label');
+                    this._initCanvas();
+                    this._bindEvents();
+                }
+
+                _initCanvas() {
+                    const rect = this.canvas.parentElement.getBoundingClientRect();
+                    const dpr = window.devicePixelRatio || 1;
+                    const w = Math.max(rect.width - 16, 200);
+                    const h = 150;
+                    this.width = w;
+                    this.height = h;
+                    this.canvas.width = w * dpr;
+                    this.canvas.height = h * dpr;
+                    this.canvas.style.width = w + 'px';
+                    this.canvas.style.height = h + 'px';
+                    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    this.ctx.scale(dpr, dpr);
+                    // Clear with white
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillRect(0, 0, w, h);
+                    if (this._savedImage) {
+                        // Draw the saved cropped image centered on the canvas
+                        const img = new Image();
+                        img.onload = () => {
+                            const iw = img.width, ih = img.height;
+                            const scale = Math.min((w - 20) / iw, (h - 20) / ih, 1);
+                            const dw = iw * scale, dh = ih * scale;
+                            const dx = (w - dw) / 2, dy = (h - dh) / 2;
+                            this.ctx.drawImage(img, dx, dy, dw, dh);
+                            this._hasDrawn = true;
+                            if (this.label) this.label.classList.add('hidden');
+                            this._updateStatus();
+                        };
+                        img.src = this._savedImage;
+                    } else {
+                        if (this.label) this.label.classList.remove('hidden');
+                        this._hasDrawn = false;
+                        this._updateStatus();
+                    }
+                    this.ctx.strokeStyle = '#1a1a2e';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.lineJoin = 'round';
+                }
+
+                _bindEvents() {
+                    const getPos = e => {
+                        const rect = this.canvas.getBoundingClientRect();
+                        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                        return { x: cx - rect.left, y: cy - rect.top };
+                    };
+                    const onStart = e => {
+                        e.preventDefault();
+                        this.isDrawing = true;
+                        const p = getPos(e);
+                        this.lastX = p.x;
+                        this.lastY = p.y;
+                        if (this.label) this.label.classList.add('hidden');
+                    };
+                    const onMove = e => {
+                        e.preventDefault();
+                        if (!this.isDrawing) return;
+                        const p = getPos(e);
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(this.lastX, this.lastY);
+                        this.ctx.lineTo(p.x, p.y);
+                        this.ctx.stroke();
+                        this.lastX = p.x;
+                        this.lastY = p.y;
+                        this._hasDrawn = true;
+                    };
+                    const onEnd = () => {
+                        if (this.isDrawing) {
+                            this.isDrawing = false;
+                            this._savedImage = this.getCroppedData();
+                            this._updateStatus();
+                        }
+                    };
+                    this.canvas.addEventListener('mousedown', onStart);
+                    this.canvas.addEventListener('mousemove', onMove);
+                    this.canvas.addEventListener('mouseup', onEnd);
+                    this.canvas.addEventListener('mouseleave', onEnd);
+                    this.canvas.addEventListener('touchstart', onStart, { passive: false });
+                    this.canvas.addEventListener('touchmove', onMove, { passive: false });
+                    this.canvas.addEventListener('touchend', onEnd);
+                    this.canvas.addEventListener('touchcancel', onEnd);
+                    if (this.clearBtn) {
+                        this.clearBtn.addEventListener('click', () => this.clear());
+                    }
+                    const ro = new ResizeObserver(() => {
+                        clearTimeout(this._resizeTimer);
+                        this._resizeTimer = setTimeout(() => {
+                            const oldImage = this._savedImage;
+                            this._savedImage = oldImage;
+                            this._initCanvas();
+                        }, 150);
+                    });
+                    ro.observe(this.canvas.parentElement);
+                }
+
+                clear() {
+                    this._savedImage = null;
+                    this._hasDrawn = false;
+                    const w = this.canvas.width / (window.devicePixelRatio || 1);
+                    const h = this.canvas.height / (window.devicePixelRatio || 1);
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.fillRect(0, 0, w, h);
+                    if (this.label) this.label.classList.remove('hidden');
+                    this._updateStatus();
+                }
+
+                getCroppedData() {
+                    if (!this._hasDrawn) return '';
+                    const canvas = this.canvas;
+                    const ctx = this.ctx;
+                    const dpr = window.devicePixelRatio || 1;
+                    const w = canvas.width;
+                    const h = canvas.height;
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const data = imageData.data;
+                    let minX = w, minY = h, maxX = 0, maxY = 0;
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            const i = (y * w + x) * 4;
+                            const r = data[i], g = data[i+1], b = data[i+2];
+                            // Non-white if any channel < 240
+                            if (r < 240 || g < 240 || b < 240) {
+                                if (x < minX) minX = x;
+                                if (x > maxX) maxX = x;
+                                if (y < minY) minY = y;
+                                if (y > maxY) maxY = y;
+                            }
+                        }
+                    }
+                    if (minX > maxX || minY > maxY) return ''; // no signature
+                    const pad = 10;
+                    minX = Math.max(0, minX - pad);
+                    minY = Math.max(0, minY - pad);
+                    maxX = Math.min(w, maxX + pad);
+                    maxY = Math.min(h, maxY + pad);
+                    const cropW = maxX - minX;
+                    const cropH = maxY - minY;
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = cropW;
+                    tempCanvas.height = cropH;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+                    return tempCanvas.toDataURL('image/png');
+                }
+
+                _updateStatus() {
+                    if (this.statusDot) {
+                        this.statusDot.className = 'dot ' + (this._hasDrawn ? 'filled' : 'empty');
+                    }
+                    if (this.statusText) {
+                        this.statusText.textContent = this._hasDrawn ? 'Signature drawn' : 'No signature';
+                    }
+                    if (this.hiddenInput) {
+                        this.hiddenInput.value = this._hasDrawn ? this.getCroppedData() : '';
+                    }
+                }
+            }
+
+            function getSignatureDataForType(type) { return state.signatureDataMap[type] || ''; }
+            function setSignatureDataForType(type, data) { state.signatureDataMap[type] = data; }
+            function formatPhone(phone) { const cleaned = phone.replace(/\D/g,''); if(cleaned.startsWith('0') && cleaned.length===10) return '254'+cleaned.slice(1); if(cleaned.startsWith('254') && cleaned.length===12) return cleaned; if(cleaned.length===9) return '254'+cleaned; return cleaned; }
+            function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+            function validatePhone(phone) { const f = formatPhone(phone); return f.length===12 && /^\d+$/.test(f); }
+
+            function getFormDataForType(type) {
+                const container = document.getElementById(`form_${type}`);
+                if(!container) return {};
+                const data = {}; container.querySelectorAll('input, select').forEach(el => { if(el.id) data[el.id] = el.value; });
+                const today = new Date(); const fmt = today.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'});
+                data['comm_date'] = fmt; data['parent_date'] = fmt;
+                return data;
+            }
+
+            function getStudentDetails() {
+                const firstType = state.selectedTypes[0]; if(!firstType) return {};
+                const data = getFormDataForType(firstType);
+                return { student_name: data.student_name || '', email: data.email || '', university: data.university || '', kcse_index: data.kcse_index || '', admission_number: data.admission_number || '', telephone: data.telephone || '' };
+            }
+
+            function validateForm(type) {
+                const container = document.getElementById(`form_${type}`); if(!container) return false;
+                let valid = true; container.querySelectorAll('[required]').forEach(el => {
+                    if (el.hasAttribute('readonly')) return;
+                    const errEl = document.getElementById(`${el.id}Error`);
+                    if(!el.value.trim()) { el.classList.add('error'); if(errEl) errEl.classList.add('show'); valid = false; }
+                    else { el.classList.remove('error'); if(errEl) errEl.classList.remove('show'); }
+                });
+                return valid;
+            }
+
+            // ===== GLOBAL FUNCTIONS for inline onclick =====
+            window.toggleDocument = function(type) {
+                const idx = state.selectedTypes.indexOf(type);
+                if(idx > -1) state.selectedTypes.splice(idx,1); else state.selectedTypes.push(type);
+                document.querySelector(`.form-type-card[data-type="${type}"]`)?.classList.toggle('selected', idx===-1);
+                updateCartUI();
+            };
+
+            window.switchTab = function(type) {
+                state.activeTab = type;
+                document.querySelectorAll('.doc-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(FORM_TYPES[type].label)));
+                document.querySelectorAll('[id^="form_"]').forEach(f => f.style.display = f.id===`form_${type}` ? 'block' : 'none');
+                if(state._pads && state._pads[type]) { setTimeout(() => state._pads[type]._initCanvas(), 50); }
+            };
+
+            function clearAll() {
+                state.selectedTypes = []; state.signatureDataMap = {};
+                document.querySelectorAll('.form-type-card').forEach(c => c.classList.remove('selected'));
+                updateCartUI(); showToast('Selection cleared.','info');
+            }
+
+            function updateCartUI() {
+                const count = state.selectedTypes.length;
+                const cs = $('#cartSummary');
+                if(count === 0) { cs.style.display = 'none'; return; }
+                cs.style.display = 'block';
+                let total = 0; state.selectedTypes.forEach(t => { total += PRICES[t] || 300; });
+                $('#cartTotal').textContent = `KES ${total}`;
+                $('#cartCount').textContent = `${count} document${count>1?'s':''}`;
+                $('#modalTotalAmount').textContent = `KES ${total}`;
+                let itemsHtml = ''; state.selectedTypes.forEach(t => { const cfg=FORM_TYPES[t]; itemsHtml += `<div class="cart-item"><span>${cfg.icon} ${cfg.label}</span><span>KES ${PRICES[t]}</span></div>`; });
+                $('#cartItems').innerHTML = itemsHtml;
+                if(!state.activeTab || !state.selectedTypes.includes(state.activeTab)) state.activeTab = state.selectedTypes[0];
+            }
+
+            function buildModalForms() {
+                const savedTextData = {};
+                state.selectedTypes.forEach(type => {
+                    const container = document.getElementById(`form_${type}`);
+                    if(container) { const data = {}; container.querySelectorAll('input:not([type=hidden]), select').forEach(el => { if(el.id) data[el.id]=el.value; }); savedTextData[type] = data; }
+                });
+                $('#docTabs').innerHTML = state.selectedTypes.map(type => {
+                    const cfg = FORM_TYPES[type];
+                    const active = type===state.activeTab ? ' active' : '';
+                    return `<button class="doc-tab${active}" onclick="switchTab('${type}')">${cfg.icon} ${cfg.label}</button>`;
+                }).join('');
+                $('#formContent').innerHTML = state.selectedTypes.map(type => {
+                    return `<div id="form_${type}" style="display:${type===state.activeTab?'block':'none'}">${buildFormHTML(type)}</div>`;
+                }).join('');
+                Object.entries(savedTextData).forEach(([type, data]) => {
+                    Object.entries(data).forEach(([key, value]) => {
+                        const el = document.querySelector(`#form_${type} #${key}`);
+                        if(el && el.type!=='hidden') el.value = value;
+                    });
+                });
+                setTimeout(() => {
+                    state.selectedTypes.forEach(type => {
+                        const container = document.getElementById(`form_${type}`);
+                        if(!container) return;
+                        const sigContainers = container.querySelectorAll('.signature-pad-container');
+                        sigContainers.forEach(sigContainer => {
+                            const savedImg = getSignatureDataForType(type);
+                            const pad = new SignaturePad(sigContainer, savedImg);
+                            const hiddenInput = container.querySelector(`input[type="hidden"]`);
+                            if(hiddenInput && savedImg) hiddenInput.value = savedImg;
+                            if(!state._pads) state._pads = {};
+                            state._pads[type] = pad;
+                        });
+                    });
+                }, 200);
+            }
+
+            function buildFormHTML(type) {
+                const cfg = FORM_TYPES[type]; let html = '<div class="form-row">';
+                cfg.fields.forEach((f,i) => {
+                    const req = f.required ? 'required' : ''; const star = f.required ? ' <span style="color:#EF4444;">*</span>' : '';
+                    let inputHtml;
+                    if(f.type==='select') { inputHtml = `<select id="${f.id}" ${req}><option value="">Select...</option>${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`; }
+                    else if(f.type==='signature') { inputHtml = `<div class="signature-pad-container"><div class="canvas-wrapper"><canvas></canvas><div class="signature-line"></div><span class="canvas-label">Sign here</span></div><div class="signature-actions"><button type="button" class="btn btn-danger btn-sm signature-clear">✕ Clear</button></div><div class="signature-status"><span class="dot empty"></span><span class="status-text">No signature</span></div></div><input type="hidden" id="${f.id}" value="" />`; }
+                    else { const readonlyAttr = f.readonly ? ' readonly' : ''; const defaultVal = f.default || ''; const placeholderAttr = f.placeholder ? ` placeholder="${f.placeholder}"` : ''; inputHtml = `<input type="${f.type}" id="${f.id}" ${req}${placeholderAttr} value="${defaultVal}"${readonlyAttr} />`; }
+                    html += `<div class="form-group"><label for="${f.id}">${f.label}${star}</label><div class="input-wrap">${inputHtml}</div><div class="error-text" id="${f.id}Error">This field is required</div></div>`;
+                    if((i+1)%2===0 && i<cfg.fields.length-1) html += '</div><div class="form-row">';
+                });
+                html += '</div>'; return html;
+            }
+
+            function openDetailsModal() {
+                if(state.selectedTypes.length === 0) { showToast('Please select at least one document.','warning'); return; }
+                openModal('detailsModal');
+                buildModalForms();
+                setTimeout(() => { if(state.activeTab) switchTab(state.activeTab); }, 100);
+            }
+
+            // ================================================================
+            //  HELPER: Load PDF.js from CDN on demand
+            // ================================================================
+            function loadPDFJS() {
+                return new Promise(function(resolve, reject) {
+                    if (window.pdfjsLib) { resolve(); return; }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                    script.onload = function() {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        resolve();
+                    };
+                    script.onerror = function() { reject(new Error('Failed to load PDF viewer')); };
+                    document.head.appendChild(script);
+                });
+            }
+
+            // ================================================================
+            //  PREVIEW — Inline PDF rendering with PDF.js on mobile (fixed DPR)
+            // ================================================================
+            async function handlePreview() {
+                if(!state.activeTab) { showToast('Select a document tab first.','warning'); return; }
+                if(!validateForm(state.activeTab)) { showToast('Please fill all required fields.','warning'); return; }
+                const formData = getFormDataForType(state.activeTab);
+                openModal('previewModal');
+                $('#previewModalTitle span').textContent = 'Preview: ' + FORM_TYPES[state.activeTab].label;
+                $('#previewContent').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:400px;"><span class="spinner" style="width:40px;height:40px;border-width:3px;"></span><span style="margin-left:16px;color:var(--text-secondary);">Generating preview...</span></div>';
+                
+                let url = null;
+                try {
+                    const resp = await fetch('/preview/' + state.activeTab, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(formData) });
+                    if(!resp.ok) throw new Error('Preview failed');
+                    const blob = await resp.blob();
+                    url = URL.createObjectURL(blob);
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    if (isMobile) {
+                        await loadPDFJS();
+                        const arrayBuffer = await new Promise(function(resolve, reject) {
+                            const reader = new FileReader();
+                            reader.onload = function() { resolve(reader.result); };
+                            reader.onerror = function() { reject(new Error('Failed to read PDF')); };
+                            reader.readAsArrayBuffer(blob);
+                        });
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        const pdf = await pdfjsLib.getDocument({data: uint8Array}).promise;
+                        const container = document.createElement('div');
+                        container.className = 'pdf-canvas-container';
+                        
+                        const dpr = window.devicePixelRatio || 1;
+                        const maxDisplayWidth = Math.min(window.innerWidth - 64, 800);
+                        
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            const baseViewport = page.getViewport({scale: 1});
+                            const baseScale = maxDisplayWidth / baseViewport.width;
+                            const dprFactor = Math.min(dpr, 2.5);
+                            const finalScale = Math.min(baseScale * dprFactor, 3.5);
+                            
+                            const viewport = page.getViewport({scale: finalScale});
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+                            await page.render({canvasContext: ctx, viewport: viewport}).promise;
+                            container.appendChild(canvas);
+                        }
+                        $('#previewContent').innerHTML = '';
+                        $('#previewContent').appendChild(container);
+                    } else {
+                        $('#previewContent').innerHTML = '<iframe src="' + url + '" style="width:100%;height:600px;border:none;pointer-events:none;" oncontextmenu="return false"></iframe>';
+                    }
+                } catch(e) {
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile && url) {
+                        const cfg = FORM_TYPES[state.activeTab];
+                        const today = new Date().toLocaleDateString('en-GB');
+                        $('#previewContent').innerHTML = 
+                            '<div class="mobile-preview-card">' +
+                            '  <div class="doc-icon">&#128196;</div>' +
+                            '  <h3>' + cfg.label + '</h3>' +
+                            '  <p class="meta">Preview ready &bull; ' + today + '</p>' +
+                            '  <div class="info-box">' +
+                            '    <div class="info-row"><span class="info-label">Document</span><span class="info-value">' + cfg.label + '</span></div>' +
+                            '    <div class="info-row"><span class="info-label">Student</span><span class="info-value">' + (formData.student_name || 'N/A') + '</span></div>' +
+                            '    <div class="info-row"><span class="info-label">University</span><span class="info-value">' + (formData.university || 'N/A') + '</span></div>' +
+                            '  </div>' +
+                            '  <a href="' + url + '" target="_blank" rel="noopener" class="open-btn">&#128065; Open Preview</a>' +
+                            '  <p class="hint">Opens in system PDF viewer</p>' +
+                            '</div>';
+                    } else {
+                        $('#previewContent').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:400px;color:#EF4444;flex-direction:column;"><span style="font-size:3rem;">&#9888;&#65039;</span><span>Failed to generate preview.</span></div>';
+                    }
+                }
+            }
+
+            function closePreviewModal() {
+                closeModal('previewModal');
+                const content = document.getElementById('previewContent');
+                if (content) {
+                    content.innerHTML = `
+                        <div class="preview-loading">
+                            <div class="spinner"></div>
+                            <p>Generating preview…</p>
+                        </div>
+                    `;
+                }
+                const blocker = document.getElementById('previewBlocker');
+                if (blocker) blocker.classList.remove('active');
+            }
+
+            // ================================================================
+            //  PAYMENT FLOW
+            // ================================================================
+            function handlePayClick() { let allValid = true; state.selectedTypes.forEach(t => { if(!validateForm(t)) allValid = false; }); if(!allValid) { showToast('Please fill all required fields.','warning'); return; } openPhoneModal(); }
+            function openPhoneModal() { $('#phoneInput').value = ''; $('#phoneInput').classList.remove('error'); $('#phoneError').classList.remove('show'); openModal('phoneModal'); setTimeout(() => $('#phoneInput').focus(), 300); }
+            async function handlePhoneSubmit(e) {
+                e.preventDefault();
+                const phone = $('#phoneInput').value.trim();
+                if(!validatePhone(phone)) {
+                    $('#phoneInput').classList.add('error');
+                    $('#phoneError').classList.add('show');
+                    return;
+                }
+                $('#phoneInput').classList.remove('error');
+                $('#phoneError').classList.remove('show');
+                closeModal('phoneModal');
+                await initiatePayment(phone);
+            }
+
+            async function initiatePayment(phone) {
+                const studentDetails = getStudentDetails();
+                if(!studentDetails.email) { showToast('Email is required.','error'); return; }
+                const formDataMap = {};
+                state.selectedTypes.forEach(t => { formDataMap[t] = getFormDataForType(t); });
+
+                // Get referral code from input
+                const referralCode = document.getElementById('referralCodeInput')?.value.trim() || '';
+
+                openModal('processingModal');
+                setTimeout(() => { $('#manualCheckHint').style.display = 'block'; }, 15000);
+                try {
+                    const resp = await fetch('/initiate_payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            form_types: state.selectedTypes,
+                            form_data_map: formDataMap,
+                            student_details: studentDetails,
+                            phone_number: phone,
+                            referral_code: referralCode
+                        })
+                    });
+                    const data = await resp.json();
+                    if(data.success && data.bundle_id) {
+                        state.bundleId = data.bundle_id;
+                        state.checkoutRequestId = data.checkout_request_id;
+                        setTimeout(() => pollPaymentStatus(data.bundle_id, data.checkout_request_id), 2000);
+                    }
+                    else {
+                        closeModal('processingModal');
+                        showToast(data.error || 'Payment failed.','error');
+                    }
+                } catch(e) {
+                    closeModal('processingModal');
+                    showToast('Network error.','error');
+                }
+            }
+
+            function pollPaymentStatus(bundleId, checkoutRequestId) {
+                if(!bundleId) return; state.bundleId = bundleId; state.checkoutRequestId = checkoutRequestId; state.paymentAttempts = 0;
+                if(state.paymentInterval) clearInterval(state.paymentInterval);
+                state.paymentInterval = setInterval(async () => { state.paymentAttempts++;
+                    try {
+                        const resp = await fetch(`/api/payment_status/${bundleId}`); const data = await resp.json();
+                        if(data.status==='success') { handleSuccess(bundleId, data.transaction_code); return; }
+                        if(state.paymentAttempts >= 20) { const checkResp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: checkoutRequestId}) }); const checkData = await checkResp.json(); if(checkData.status==='success') { handleSuccess(bundleId, checkData.transaction_code); return; } }
+                        if(state.paymentAttempts >= 40) { clearInterval(state.paymentInterval); closeModal('processingModal'); openModal('manualVerifyModal'); return; }
+                    } catch(e) {}
+                }, 3000);
+            }
+
+            function handleSuccess(bundleId, txCode) {
+                if(state.paymentInterval) { clearInterval(state.paymentInterval); state.paymentInterval = null; }
+                state.transactionCode = txCode || 'N/A'; closeModal('processingModal');
+                const studentName = getStudentDetails().student_name || 'Student';
+                $('#successStudentName').textContent = studentName; $('#successBundleId').textContent = bundleId; $('#successTxCode').textContent = txCode || 'N/A';
+                let totalPaid = 0; state.selectedTypes.forEach(t => { totalPaid += PRICES[t] || 300; }); $('#successTotalAmount').textContent = `KES ${totalPaid}`;
+                let docHtml = ''; state.selectedTypes.forEach(t => { const cfg = FORM_TYPES[t]; const downloadUrl = `/download_pdf/${bundleId}/${t}`; docHtml += `<a href="${downloadUrl}" class="btn btn-primary" style="margin:4px 0;" download>⬇️ Download ${cfg.label}</a>`; });
+                $('#successDocList').innerHTML = docHtml; openModal('successModal'); showToast('Payment confirmed!','success');
+            }
+
+            function cancelPayment() { if(state.paymentInterval) { clearInterval(state.paymentInterval); state.paymentInterval = null; } closeModal('processingModal'); showToast('Payment cancelled.','warning'); }
+
+            async function manualVerify() { if(!state.checkoutRequestId) { showToast('No payment reference.','error'); return; } closeModal('manualVerifyModal'); openModal('processingModal'); $('#manualCheckHint').style.display = 'block'; try { const resp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: state.checkoutRequestId}) }); const data = await resp.json(); if(data.status==='success') { handleSuccess(state.bundleId || data.bundle_id, data.transaction_code); } else { closeModal('processingModal'); showToast('Payment still not confirmed.','warning'); } } catch(e) { closeModal('processingModal'); showToast('Network error.','error'); } }
+            function manualVerifyEmail() { closeModal('manualVerifyModal'); document.getElementById('retrieve').scrollIntoView({behavior:'smooth'}); $('#retrieveEmail').focus(); }
+
+            // ================================================================
+            //  RETRIEVE
+            // ================================================================
+            async function handleRetrieve(e) {
+                e.preventDefault(); const email = $('#retrieveEmail').value.trim();
+                if(!validateEmail(email)) { $('#retrieveEmail').classList.add('error'); $('#retrieveError').classList.add('show'); return; }
+                $('#retrieveEmail').classList.remove('error'); $('#retrieveError').classList.remove('show');
+                const btn = $('#retrieveBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Searching...';
+                try {
+                    const resp = await fetch('/retrieve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({identifier: email}) });
+                    const data = await resp.json();
+                    if(resp.ok && data.bundle_id) { $('#retrieveDocName').textContent = data.student_name || 'Document Bundle'; $('#retrieveDocId').textContent = `Bundle ID: ${data.bundle_id}`; let linksHtml = ''; if(data.documents) { data.documents.forEach(doc => { const url = `/download_pdf/${data.bundle_id}/${doc.type}`; linksHtml += `<a href="${url}" class="btn btn-primary btn-sm" style="margin:4px 0;">⬇️ Download ${doc.name}</a>`; }); } $('#retrieveDocList').innerHTML = linksHtml; $('#retrieveResult').style.display = 'block'; showToast('Documents retrieved!','success'); }
+                    else showToast(data.error || 'No documents found.','error');
+                } catch(e) { showToast('Network error.','error'); }
+                btn.disabled = false; btn.innerHTML = 'Retrieve Documents →';
+            }
+
+            // ================================================================
+            //  KEYBOARD SHORTCUT BLOCKER (Ctrl+S, Ctrl+P, F12, etc.)
+            // ================================================================
+            function blockKeyboardShortcuts(e) {
+                const previewModal = document.getElementById('previewModal');
+                const isPreviewActive = previewModal && previewModal.classList.contains('active');
+
+                const blockedKeys = [
+                    { ctrl: true, key: 's' }, { ctrl: true, key: 'p' }, { ctrl: true, key: 'u' },
+                    { ctrl: true, key: 'i' }, { ctrl: true, key: 'j' }, { ctrl: true, key: 'c' },
+                    { ctrl: true, key: 'v' }, { ctrl: true, key: 'x' }, { key: 'F12' },
+                ];
+
+                for (const rule of blockedKeys) {
+                    const ctrlMatch = rule.ctrl ? (e.ctrlKey || e.metaKey) : true;
+                    const keyMatch = e.key === rule.key || e.key === rule.key.toUpperCase();
+                    if (ctrlMatch && keyMatch) {
+                        if (isPreviewActive || rule.key === 's' || rule.key === 'p' || rule.key === 'F12') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            showToast('This action is not available in preview mode.', 'warning');
+                            return false;
+                        }
+                    }
+                }
+
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                    if (isPreviewActive) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showToast('Developer tools are disabled in preview mode.', 'warning');
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // ================================================================
+            //  CONTEXT MENU BLOCKER
+            // ================================================================
+            function blockContextMenu(e) {
+                const previewModal = document.getElementById('previewModal');
+                const isPreviewActive = previewModal && previewModal.classList.contains('active');
+                if (isPreviewActive) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showToast('Right-click is disabled in preview mode.', 'warning');
+                    return false;
+                }
+                return true;
+            }
+
+            // ================================================================
+            //  INIT
+            // ================================================================
+            function init() {
+                // ---- Event listeners ----
+                $('#navToggle').addEventListener('click', () => { const links=$('#navLinks'); const open=links.classList.toggle('open'); $('#navToggle').classList.toggle('active',open); });
+                document.querySelectorAll('.form-type-card').forEach(card => card.addEventListener('click', () => toggleDocument(card.dataset.type)));
+                $('#clearCartBtn').addEventListener('click', clearAll); $('#continueBtn').addEventListener('click', openDetailsModal);
+                $('#detailsBackBtn').addEventListener('click', () => closeModal('detailsModal'));
+                $('#previewBtn').addEventListener('click', handlePreview);
+                $('#payBtn').addEventListener('click', handlePayClick);
+
+                $('#phoneForm').addEventListener('submit', handlePhoneSubmit);
+                $('#phoneModalClose').addEventListener('click', () => closeModal('phoneModal'));
+                $('#phoneModalCancel').addEventListener('click', () => closeModal('phoneModal'));
+
+                $('#processingCancelBtn').addEventListener('click', cancelPayment);
+                $('#manualCheckBtn').addEventListener('click', manualVerify);
+
+                $('#manualVerifyBtn').addEventListener('click', manualVerify);
+                $('#manualVerifyEmailBtn').addEventListener('click', manualVerifyEmail);
+                $('#manualVerifyClose').addEventListener('click', () => closeModal('manualVerifyModal'));
+
+                $('#previewModalClose').addEventListener('click', closePreviewModal);
+                $('#previewModalCloseBtn').addEventListener('click', closePreviewModal);
+                $('#previewModalPayBtn').addEventListener('click', () => { closePreviewModal(); openPhoneModal(); });
+
+                $('#retrieveForm').addEventListener('submit', handleRetrieve);
+
+                $('#successModalClose').addEventListener('click', () => closeModal('successModal'));
+                $('#successModalCloseBtn').addEventListener('click', () => closeModal('successModal'));
+
+                document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) { o.classList.remove('active'); document.body.style.overflow=''; } }));
+
+                document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay.active, .details-modal.active').forEach(m => { m.classList.remove('active'); document.body.style.overflow=''; }); });
+
+                window.addEventListener('scroll', () => $('#navbar').classList.toggle('scrolled', window.pageYOffset>50));
+
+                document.addEventListener('keydown', blockKeyboardShortcuts, true);
+                document.addEventListener('contextmenu', blockContextMenu, true);
+
+                const previewBody = document.querySelector('.preview-modal .modal-body');
+                if (previewBody) {
+                    previewBody.addEventListener('touchstart', (e) => {}, { passive: true });
+                }
+
+                function animateStats() {
+                    const docsTarget=2485, usersTarget=1562, duration=1800, startTime=performance.now();
+                    function update(now) {
+                        const elapsed=now-startTime, progress=Math.min(elapsed/duration,1), eased=1-Math.pow(1-progress,3);
+                        const docsEl = document.getElementById('statDocs');
+                        const usersEl = document.getElementById('statUsers');
+                        if (docsEl) docsEl.textContent=Math.floor(eased*docsTarget).toLocaleString();
+                        if (usersEl) usersEl.textContent=Math.floor(eased*usersTarget).toLocaleString();
+                        if(progress<1) requestAnimationFrame(update);
+                        else {
+                            if (docsEl) docsEl.textContent=docsTarget.toLocaleString();
+                            if (usersEl) usersEl.textContent=usersTarget.toLocaleString();
+                        }
+                    }
+                    requestAnimationFrame(update);
+                }
+                animateStats();
+
+                const revealObserver = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
+                document.querySelectorAll('.reveal, .stagger').forEach(el => revealObserver.observe(el));
+
+                // Auto-fill referral code from URL parameter 'ref'
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                if (refCode) {
+                    const input = document.getElementById('referralCodeInput');
+                    if (input) {
+                        input.value = refCode;
+                        showToast('Referral code detected!', 'info');
+                    }
+                }
+
+                const email = sessionStorage.getItem('sd_email');
+                if(email) document.getElementById('retrieveEmail') && (document.getElementById('retrieveEmail').value = email);
+            }
+
+            document.addEventListener('DOMContentLoaded', init);
+        })();
+    </script>
+</body>
+</html>

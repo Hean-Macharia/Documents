@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HELB Admin Panel</title>
+<style>
+:root{
+  --ink:#1a2744;--accent:#7c3aed;--light:#f5f3ff;--border:#e2e8f0;
+  --bg:#f8fafc;--white:#fff;--green:#16a34a;--red:#dc2626;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+
+header{background:var(--ink);color:#fff;padding:0 28px;display:flex;align-items:center;gap:14px;height:60px}
+header .logo{font-size:1.2rem;font-weight:800}
+header .logo span{color:#a78bfa}
+header .badge{background:#7c3aed;color:#fff;font-size:.7rem;font-weight:700;
+  padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+header a{color:rgba(255,255,255,.6);font-size:.82rem;margin-left:auto;text-decoration:none}
+header a:hover{color:#fff}
+
+.tabs{display:flex;gap:2px;background:#2d1b69;padding:0 28px}
+.tab{padding:12px 22px;border:none;background:transparent;color:rgba(255,255,255,.5);
+     font-size:.87rem;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;transition:.2s}
+.tab.active{color:#fff;border-bottom-color:#a78bfa}
+
+.workspace{display:grid;grid-template-columns:440px 1fr;height:calc(100vh - 100px)}
+.form-panel{background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:24px}
+.preview-panel{background:#e2e8f0;display:flex;flex-direction:column;align-items:center;padding:20px;overflow-y:auto}
+
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+               color:var(--accent);margin:20px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--light)}
+.section-label:first-child{margin-top:0}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1.5px solid var(--border);
+  border-radius:7px;font-size:.88rem;color:var(--ink);background:var(--white);transition:border-color .18s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.sig-wrap{border:1.5px solid var(--border);border-radius:7px;overflow:hidden;background:#fafafa}
+.sig-wrap canvas{display:block;cursor:crosshair;touch-action:none}
+.sig-actions{display:flex;gap:8px;padding:6px 8px;background:#f1f5f9;border-top:1px solid var(--border)}
+.sig-actions button{font-size:.75rem;padding:4px 10px;border:1px solid var(--border);
+  border-radius:5px;background:#fff;cursor:pointer;color:var(--ink)}
+
+.notice{background:var(--light);border-left:3px solid var(--accent);padding:10px 13px;
+        border-radius:0 7px 7px 0;font-size:.8rem;color:#4c1d95;margin-bottom:16px;line-height:1.5}
+
+.actions{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.btn-preview{flex:1;padding:10px;background:var(--light);border:1.5px solid var(--accent);
+  color:var(--accent);border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer}
+.btn-preview:hover{background:var(--accent);color:#fff}
+.btn-download{flex:1;padding:10px;background:var(--green);border:none;color:#fff;
+  border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer}
+.btn-loading{opacity:.6;cursor:wait!important}
+
+.preview-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+               color:#64748b;margin-bottom:12px;align-self:flex-start}
+.preview-frame{background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.1);width:100%;max-width:680px}
+.preview-frame iframe{width:100%;height:calc(100vh - 180px);border:none}
+.preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:400px;color:#94a3b8;gap:10px;font-size:.88rem}
+
+.form-pane{display:none}.form-pane.active{display:block}
+.divider{height:1px;background:var(--border);margin:18px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HELB <span>Admin</span></div>
+  <span class="badge">Authorised Personnel Only</span>
+  <a href="/">← Student Portal</a>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('medical',this)">Medical Officer</button>
+  <button class="tab" onclick="switchTab('sponsorship',this)">Sponsorship</button>
+  <button class="tab" onclick="switchTab('single_parent',this)">Commissioner of Oaths</button>
+</div>
+
+<div class="workspace">
+<div class="form-panel">
+
+  <!-- ══ MEDICAL ADMIN ══ -->
+  <div class="form-pane active" id="pane-medical">
+    <div class="notice">First paste the student details from their filled section (or retype), then complete the medical officer fields and sign.</div>
+
+    <div class="section-label">Student Details (from student)</div>
+    <div class="field"><label>Student Full Name</label><input id="m-student_name" oninput="livePreview('medical')" placeholder="Jane Achieng Odhiambo"/></div>
+    <div class="row2">
+      <div class="field"><label>National ID</label><input id="m-national_id" oninput="livePreview('medical')" placeholder="12345678"/></div>
+      <div class="field"><label>University</label><input id="m-university" oninput="livePreview('medical')" placeholder="University of Nairobi"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>KCSE Index</label><input id="m-kcse_index" oninput="livePreview('medical')" placeholder="10203040506"/></div>
+      <div class="field"><label>Admission No.</label><input id="m-admission_number" oninput="livePreview('medical')" placeholder="A001/0001/2023"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Telephone</label><input id="m-telephone" oninput="livePreview('medical')" placeholder="0712345678"/></div>
+      <div class="field"><label>Email</label><input id="m-email" oninput="livePreview('medical')" placeholder="jane@email.com"/></div>
+    </div>
+
+    <div class="section-label">Medical Officer Details</div>
+    <div class="field"><label>Medical Officer Full Name</label><input id="m-officer_name" oninput="livePreview('medical')" placeholder="Dr. John Mwangi"/></div>
+    <div class="row2">
+      <div class="field"><label>Hospital Name</label><input id="m-hospital_name" oninput="livePreview('medical')" placeholder="Kenyatta National Hospital"/></div>
+      <div class="field"><label>Designation</label><input id="m-designation" oninput="livePreview('medical')" placeholder="Medical Officer"/></div>
+    </div>
+    <div class="field"><label>Registration Number</label><input id="m-reg_number" oninput="livePreview('medical')" placeholder="KMA/12345"/></div>
+
+    <div class="section-label">Medical Officer — Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-m-officer" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Medical officer signs above</span>
+        <button onclick="clearSig('m-officer')">Clear</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Commissioner of Oaths / Magistrate</div>
+    <div class="field"><label>Commissioner Full Name</label><input id="m-comm_name" oninput="livePreview('medical')" placeholder="Hon. Peter Odhiambo"/></div>
+
+    <div class="section-label">Commissioner — Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-m-comm" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Commissioner signs above</span>
+        <button onclick="clearSig('m-comm')">Clear</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-preview" onclick="doPreview('medical')">👁 Preview</button>
+      <button class="btn-download" id="dl-medical" onclick="doDownload('medical')">⬇ Download Final PDF</button>
+    </div>
+  </div>
+
+  <!-- ══ SPONSORSHIP ADMIN ══ -->
+  <div class="form-pane" id="pane-sponsorship">
+    <div class="notice">Enter student details and sponsor details, then the sponsor signs the declaration.</div>
+
+    <div class="section-label">Student Details</div>
+    <div class="field"><label>Student Full Name</label><input id="s-student_name" oninput="livePreview('sponsorship')" placeholder="Jane Achieng Odhiambo"/></div>
+    <div class="row2">
+      <div class="field"><label>National ID</label><input id="s-national_id" oninput="livePreview('sponsorship')" placeholder="12345678"/></div>
+      <div class="field"><label>University</label><input id="s-university" oninput="livePreview('sponsorship')" placeholder="University of Nairobi"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>KCSE Index</label><input id="s-kcse_index" oninput="livePreview('sponsorship')" placeholder="10203040506"/></div>
+      <div class="field"><label>Admission No.</label><input id="s-admission_number" oninput="livePreview('sponsorship')" placeholder="A001/0001/2023"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Telephone</label><input id="s-telephone" oninput="livePreview('sponsorship')" placeholder="0712345678"/></div>
+      <div class="field"><label>Email</label><input id="s-email" oninput="livePreview('sponsorship')" placeholder="jane@email.com"/></div>
+    </div>
+
+    <div class="section-label">Sponsor Details</div>
+    <div class="field"><label>Sponsor Full Name</label><input id="s-sponsor_name" oninput="livePreview('sponsorship')" placeholder="Peter Kamau Ngugi"/></div>
+    <div class="row2">
+      <div class="field"><label>Sponsor Email</label><input id="s-sponsor_email" oninput="livePreview('sponsorship')" placeholder="peter@email.com"/></div>
+      <div class="field"><label>Sponsor Telephone</label><input id="s-sponsor_telephone" oninput="livePreview('sponsorship')" placeholder="0722000111"/></div>
+    </div>
+
+    <div class="field">
+      <label>Relationship to Student</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="s-rel-opts">
+        <button class="opt-btn" onclick="selectOpt('s','relationship','Guardian',this)">Guardian</button>
+        <button class="opt-btn" onclick="selectOpt('s','relationship','Relative',this)">Relative</button>
+        <button class="opt-btn" onclick="selectOpt('s','relationship','Organization',this)">Organization</button>
+        <button class="opt-btn" onclick="selectOpt('s','relationship','Other',this)">Other</button>
+      </div>
+      <input type="hidden" id="s-relationship"/>
+    </div>
+
+    <div class="section-label">Sponsorship Declaration</div>
+    <div class="row2">
+      <div class="field">
+        <label>Education Level Sponsored</label>
+        <select id="s-sponsored_level" onchange="livePreview('sponsorship')">
+          <option value="">-- Select --</option>
+          <option>Primary</option><option>Secondary</option><option>College</option>
+        </select>
+      </div>
+      <div class="field"><label>Duration Completed</label><input id="s-completed_duration" oninput="livePreview('sponsorship')" placeholder="4 years (2018–2022)"/></div>
+    </div>
+    <div class="field"><label>Sponsorship Covered</label><input id="s-sponsorship_covered" oninput="livePreview('sponsorship')" placeholder="Tuition, Books, Accommodation"/></div>
+
+    <div class="section-label">Sponsor Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-s-sponsor" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Sponsor signs above</span>
+        <button onclick="clearSig('s-sponsor')">Clear</button>
+      </div>
+    </div>
+
+    <div class="section-label">Student Acknowledgment Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-s-student" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Student signs above</span>
+        <button onclick="clearSig('s-student')">Clear</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-preview" onclick="doPreview('sponsorship')">👁 Preview</button>
+      <button class="btn-download" id="dl-sponsorship" onclick="doDownload('sponsorship')">⬇ Download Final PDF</button>
+    </div>
+  </div>
+
+  <!-- ══ SINGLE PARENT — COMMISSIONER TAB ══ -->
+  <div class="form-pane" id="pane-single_parent">
+    <div class="notice">The student + parent details are filled on the Student Portal. Use this panel to add the Commissioner of Oaths signature and complete the final declaration.</div>
+
+    <div class="section-label">Student Details (re-enter from student form)</div>
+    <div class="field"><label>Student Full Name</label><input id="sp-student_name" oninput="livePreview('single_parent')" placeholder="Jane Achieng Odhiambo"/></div>
+    <div class="row2">
+      <div class="field"><label>National ID</label><input id="sp-national_id" oninput="livePreview('single_parent')" placeholder="12345678"/></div>
+      <div class="field"><label>University</label><input id="sp-university" oninput="livePreview('single_parent')" placeholder="University of Nairobi"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>KCSE Index</label><input id="sp-kcse_index" oninput="livePreview('single_parent')" placeholder="10203040506"/></div>
+      <div class="field"><label>Admission No.</label><input id="sp-admission_number" oninput="livePreview('single_parent')" placeholder="A001/0001/2023"/></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Telephone</label><input id="sp-telephone" oninput="livePreview('single_parent')" placeholder="0712345678"/></div>
+      <div class="field"><label>Email</label><input id="sp-email" oninput="livePreview('single_parent')" placeholder="jane@email.com"/></div>
+    </div>
+
+    <div class="section-label">Parent Details</div>
+    <div class="field"><label>Parent Full Name</label><input id="sp-parent_name" oninput="livePreview('single_parent')" placeholder="Mary Achieng Otieno"/></div>
+    <div class="row2">
+      <div class="field"><label>Parent ID</label><input id="sp-parent_id" oninput="livePreview('single_parent')" placeholder="87654321"/></div>
+      <div class="field"><label>Parent Telephone</label><input id="sp-parent_telephone" oninput="livePreview('single_parent')" placeholder="0733111222"/></div>
+    </div>
+    <div class="field">
+      <label>Relationship</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="opt-btn" onclick="selectOpt('sp','relationship','Mother',this)">Mother</button>
+        <button class="opt-btn" onclick="selectOpt('sp','relationship','Father',this)">Father</button>
+      </div>
+      <input type="hidden" id="sp-relationship"/>
+    </div>
+    <div class="field">
+      <label>Marital Status</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="opt-btn" onclick="selectOpt('sp','marital_status','Single',this)">Single</button>
+        <button class="opt-btn" onclick="selectOpt('sp','marital_status','Separated',this)">Separated</button>
+        <button class="opt-btn" onclick="selectOpt('sp','marital_status','Divorce',this)">Divorce</button>
+      </div>
+      <input type="hidden" id="sp-marital_status"/>
+    </div>
+
+    <div class="section-label">Parent Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-sp-parent" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Parent signs above</span>
+        <button onclick="clearSig('sp-parent')">Clear</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-label">Commissioner of Oaths / Magistrate</div>
+    <div class="field"><label>Commissioner Full Name</label><input id="sp-comm_name" oninput="livePreview('single_parent')" placeholder="Hon. Agnes Wanjiku"/></div>
+
+    <div class="section-label">Commissioner Signature</div>
+    <div class="sig-wrap">
+      <canvas id="sig-sp-comm" width="388" height="80"></canvas>
+      <div class="sig-actions">
+        <span style="font-size:.75rem;color:#64748b;flex:1">Commissioner signs above</span>
+        <button onclick="clearSig('sp-comm')">Clear</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-preview" onclick="doPreview('single_parent')">👁 Preview</button>
+      <button class="btn-download" id="dl-single_parent" onclick="doDownload('single_parent')">⬇ Download Final PDF</button>
+    </div>
+  </div>
+
+</div><!-- /form-panel -->
+
+<div class="preview-panel">
+  <div class="preview-label">Document Preview</div>
+  <div class="preview-frame" id="preview-frame">
+    <div class="preview-placeholder">Fill form fields and click Preview</div>
+  </div>
+</div>
+</div><!-- /workspace -->
+
+<style>
+.opt-btn{padding:6px 14px;border:1.5px solid var(--border);border-radius:20px;
+         font-size:.82rem;cursor:pointer;background:#fff;color:var(--ink);transition:.15s;font-weight:500}
+.opt-btn.selected{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+
+<script>
+let currentTab = 'medical';
+function switchTab(name, btn) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.form-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  clearPreview();
+  setTimeout(() => initAllSigs(), 50);
+}
+
+function selectOpt(prefix, field, val, btn) {
+  btn.closest('[id$="-opts"], div').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById(prefix + '-' + field).value = val;
+  livePreview(currentTab);
+}
+
+// Signature pads
+const sigPads = {};
+function initSig(id) {
+  const canvas = document.getElementById('sig-' + id);
+  if (!canvas || sigPads[id]) return;
+  const ctx = canvas.getContext('2d');
+  let drawing = false, lx = 0, ly = 0;
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    if (e.touches) return {x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
+    return {x:e.clientX-r.left,y:e.clientY-r.top};
+  }
+  canvas.addEventListener('mousedown',  e => {drawing=true;const p=pos(e);lx=p.x;ly=p.y});
+  canvas.addEventListener('touchstart', e => {e.preventDefault();drawing=true;const p=pos(e);lx=p.x;ly=p.y});
+  canvas.addEventListener('mouseup',    () => {drawing=false;livePreview(currentTab)});
+  canvas.addEventListener('touchend',   () => {drawing=false;livePreview(currentTab)});
+  canvas.addEventListener('mouseleave', () => drawing=false);
+  ['mousemove','touchmove'].forEach(ev => canvas.addEventListener(ev, e => {
+    if (!drawing) return; if(e.cancelable)e.preventDefault();
+    const p=pos(e);
+    ctx.beginPath();ctx.strokeStyle='#1a2744';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.moveTo(lx,ly);ctx.lineTo(p.x,p.y);ctx.stroke();lx=p.x;ly=p.y;
+  }));
+  sigPads[id] = canvas;
+}
+
+function initAllSigs() {
+  document.querySelectorAll('[id^="sig-"]').forEach(c => initSig(c.id.replace('sig-','')));
+}
+initAllSigs();
+
+function clearSig(id) {
+  const c=document.getElementById('sig-'+id);
+  if(c){c.getContext('2d').clearRect(0,0,c.width,c.height);}
+}
+
+function getSigData(id) {
+  const c=document.getElementById('sig-'+id);
+  if(!c) return null;
+  const data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+  return data.some((_,i)=>i%4===3&&data[i]>10) ? c.toDataURL('image/png') : null;
+}
+
+// Map of form → fields prefix + sig ids
+const formConfig = {
+  medical: {
+    prefix: 'm',
+    fields: ['student_name','national_id','university','kcse_index','admission_number','telephone','email',
+             'officer_name','hospital_name','designation','reg_number','comm_name'],
+    sigs: {officer_sig:'m-officer', comm_sig:'m-comm'}
+  },
+  sponsorship: {
+    prefix: 's',
+    fields: ['student_name','national_id','university','kcse_index','admission_number','telephone','email',
+             'sponsor_name','sponsor_email','sponsor_telephone','relationship',
+             'sponsored_level','sponsorship_covered','completed_duration'],
+    sigs: {sponsor_sig:'s-sponsor', student_sig:'s-student'}
+  },
+  single_parent: {
+    prefix: 'sp',
+    fields: ['student_name','national_id','university','kcse_index','admission_number','telephone','email',
+             'parent_name','parent_id','parent_telephone','relationship','marital_status','comm_name'],
+    sigs: {parent_sig:'sp-parent', comm_sig:'sp-comm'}
+  }
+};
+
+function collectData(form) {
+  const cfg = formConfig[form];
+  const d = {};
+  cfg.fields.forEach(f => {
+    const el = document.getElementById(cfg.prefix+'-'+f);
+    if(el) d[f] = el.value;
+  });
+  Object.entries(cfg.sigs).forEach(([key,sigId]) => {
+    d[key] = getSigData(sigId);
+  });
+  return d;
+}
+
+let previewTimer = null;
+function livePreview(form) {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => doPreview(form, true), 900);
+}
+
+async function doPreview(form, silent=false) {
+  const frame = document.getElementById('preview-frame');
+  if (!silent) frame.innerHTML = '<div class="preview-placeholder">Generating preview…</div>';
+  try {
+    const res = await fetch('/preview/'+form, {
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(collectData(form))
+    });
+    const json = await res.json();
+    frame.innerHTML = `<iframe src="data:application/pdf;base64,${json.pdf}#toolbar=0&view=FitH"></iframe>`;
+  } catch(e) {
+    if(!silent) frame.innerHTML = '<div class="preview-placeholder">Preview failed</div>';
+  }
+}
+
+function clearPreview() {
+  document.getElementById('preview-frame').innerHTML = '<div class="preview-placeholder">Fill form fields and click Preview</div>';
+}
+
+async function doDownload(form) {
+  const btn = document.getElementById('dl-'+form);
+  btn.textContent='⏳ Generating…'; btn.classList.add('btn-loading');
+  try {
+    const res = await fetch('/fill/'+form, {
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(collectData(form))
+    });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'),{href:url,download:form+'_admin_filled.pdf'}).click();
+    URL.revokeObjectURL(url);
+  } catch(e){alert('Download failed: '+e.message);}
+  finally{btn.textContent='⬇ Download Final PDF';btn.classList.remove('btn-loading');}
+}
+</script>
+</body>
+</html>

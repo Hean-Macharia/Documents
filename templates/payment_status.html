@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Status — Supporting Documents</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F7F9FC;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 48px 40px;
+            max-width: 540px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .icon {
+            font-size: 72px;
+            margin-bottom: 16px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #10B981;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h2 { color: #0F172A; margin-bottom: 8px; font-size: 1.5rem; }
+        .subtitle { color: #64748B; margin-bottom: 24px; font-size: 0.95rem; }
+        .status-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .status-box .label { color: #64748B; font-size: 14px; }
+        .status-box .value { 
+            font-size: 18px; 
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .status-box .value.success { color: #10B981; }
+        .status-box .value.pending { color: #F59E0B; }
+        .status-box .value.failed { color: #EF4444; }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #10B981;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 8px 4px;
+            transition: background 0.3s;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn:hover { background: #059669; }
+        .btn-secondary { background: #64748B; }
+        .btn-secondary:hover { background: #475569; }
+        .btn-gold { background: #F59E0B; }
+        .btn-gold:hover { background: #D97706; }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .hidden { display: none; }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .transaction-code {
+            font-family: monospace;
+            background: #e8eaf6;
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 8px 0;
+        }
+        .note {
+            margin-top: 16px;
+            color: #64748B;
+            font-size: 14px;
+        }
+        .doc-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10B981;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 4px;
+        }
+        .doc-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin: 8px 0;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        @media (max-width: 480px) {
+            .container { padding: 32px 20px; }
+            .icon { font-size: 56px; }
+            .actions { flex-direction: column; }
+            .actions .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="statusContainer">
+        <div class="icon" id="statusIcon">⏳</div>
+        <h2 id="statusTitle">Processing Payment</h2>
+        <p class="subtitle" id="statusSubtitle">Please wait while we confirm your payment...</p>
+        
+        <div class="status-box">
+            <div class="label">Payment Status</div>
+            <div class="value pending" id="statusText">Checking...</div>
+        </div>
+        
+        <div id="detailsSection" class="hidden">
+            <div class="status-box">
+                <div class="label">Bundle ID</div>
+                <div class="value" style="font-size:14px;color:#64748B;" id="bundleIdDisplay">{{ bundle_id }}</div>
+            </div>
+            <div class="status-box">
+                <div class="label">Student</div>
+                <div class="value" style="font-size:14px;color:#64748B;" id="studentNameDisplay">{{ student_name }}</div>
+            </div>
+            <div class="status-box">
+                <div class="label">Documents</div>
+                <div class="doc-list" id="docListDisplay">
+                    {% for doc in doc_names.split(', ') %}
+                        <span class="doc-tag">{{ doc }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="status-box">
+                <div class="label">Total Amount</div>
+                <div class="value" style="font-size:14px;color:#10B981;" id="totalAmountDisplay">KES {{ total_amount }}</div>
+            </div>
+        </div>
+        
+        <div id="transactionSection" class="hidden">
+            <div class="status-box">
+                <div class="label">Transaction Code</div>
+                <div class="transaction-code" id="transactionCode">-</div>
+            </div>
+        </div>
+        
+        <div id="actionSection" class="hidden">
+            <div class="actions">
+                <a href="#" class="btn" id="downloadBtn">
+                    📥 Download All (ZIP)
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    🏠 Return Home
+                </a>
+                <a href="#retrieve" class="btn btn-gold">
+                    📧 Retrieve by Email
+                </a>
+            </div>
+        </div>
+        
+        <div id="errorSection" class="hidden">
+            <p style="color:#EF4444;margin:16px 0;" id="errorMessage">
+                Payment verification failed. Please try again or contact support.
+            </p>
+            <a href="/" class="btn btn-secondary">🏠 Return Home</a>
+        </div>
+        
+        <div class="note" id="noteSection">
+            <p>💡 You will also receive the documents via email.</p>
+            <p style="margin-top:4px;">This page will auto-update when payment is confirmed.</p>
+        </div>
+    </div>
+    
+    <script>
+        const bundleId = '{{ bundle_id }}';
+        const initialStatus = '{{ payment_status }}';
+        let pollCount = 0;
+        let maxPolls = 120;
+        let downloadUrl = '';
+        
+        function updateStatus(data) {
+            const status = data.status;
+            const icon = document.getElementById('statusIcon');
+            const title = document.getElementById('statusTitle');
+            const subtitle = document.getElementById('statusSubtitle');
+            const statusText = document.getElementById('statusText');
+            const detailsSection = document.getElementById('detailsSection');
+            const transactionSection = document.getElementById('transactionSection');
+            const actionSection = document.getElementById('actionSection');
+            const errorSection = document.getElementById('errorSection');
+            const noteSection = document.getElementById('noteSection');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const transactionCode = document.getElementById('transactionCode');
+            
+            detailsSection.classList.remove('hidden');
+            
+            if (status === 'success') {
+                icon.textContent = '✅';
+                title.textContent = 'Payment Successful!';
+                subtitle.textContent = 'Your documents are ready for download.';
+                statusText.textContent = '✓ Payment Confirmed';
+                statusText.className = 'value success';
+                
+                transactionSection.classList.remove('hidden');
+                transactionCode.textContent = data.transaction_code || 'N/A';
+                
+                if (data.download_all_url) {
+                    downloadUrl = data.download_all_url;
+                    downloadBtn.href = downloadUrl;
+                    downloadBtn.classList.remove('hidden');
+                    actionSection.classList.remove('hidden');
+                    noteSection.innerHTML = '<p>📧 A copy has also been sent to your email.</p>';
+                } else if (data.ready === false) {
+                    title.textContent = 'Payment Confirmed!';
+                    subtitle.textContent = 'Your documents are being prepared...';
+                    statusText.textContent = '✓ Payment Confirmed - Generating PDFs';
+                    statusText.className = 'value success';
+                    actionSection.classList.add('hidden');
+                    noteSection.innerHTML = '<p>⏳ Your documents are being generated. This will take a few seconds...</p>';
+                    return false;
+                } else {
+                    downloadBtn.href = `/download_all/${bundleId}`;
+                    downloadBtn.classList.remove('hidden');
+                    actionSection.classList.remove('hidden');
+                    noteSection.innerHTML = '<p>📧 A copy has also been sent to your email.</p>';
+                }
+                return true;
+                
+            } else if (status === 'failed') {
+                icon.textContent = '❌';
+                title.textContent = 'Payment Failed';
+                subtitle.textContent = 'We could not confirm your payment.';
+                statusText.textContent = '✗ Payment Failed';
+                statusText.className = 'value failed';
+                errorSection.classList.remove('hidden');
+                document.getElementById('errorMessage').textContent = 
+                    'Payment verification failed. Please try again or contact support.';
+                actionSection.classList.add('hidden');
+                return true;
+                
+            } else {
+                icon.textContent = '⏳';
+                title.textContent = 'Processing Payment';
+                subtitle.textContent = 'Please wait while we confirm your payment...';
+                statusText.textContent = '⏳ Waiting for confirmation...';
+                statusText.className = 'value pending';
+                return false;
+            }
+        }
+        
+        function pollStatus() {
+            pollCount++;
+            
+            fetch(`/api/payment_status/${bundleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const completed = updateStatus(data);
+                    
+                    if (!completed && pollCount < maxPolls) {
+                        setTimeout(pollStatus, 2000);
+                    } else if (!completed && pollCount >= maxPolls) {
+                        document.getElementById('statusTitle').textContent = 'Taking Longer Than Expected';
+                        document.getElementById('statusSubtitle').textContent = 
+                            'Please check your email or try retrieving your document manually.';
+                        document.getElementById('actionSection').classList.remove('hidden');
+                        document.getElementById('downloadBtn').textContent = '📧 Retrieve by Email';
+                        document.getElementById('downloadBtn').href = '/#retrieve';
+                        document.getElementById('downloadBtn').className = 'btn btn-gold';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error polling status:', error);
+                    if (pollCount < maxPolls) {
+                        setTimeout(pollStatus, 3000);
+                    }
+                });
+        }
+        
+        // Start polling
+        if (initialStatus === 'success') {
+            fetch(`/api/payment_status/${bundleId}`)
+                .then(response => response.json())
+                .then(data => updateStatus(data));
+        } else {
+            setTimeout(pollStatus, 2000);
+        }
+    </script>
+</body>
+</html>
