@@ -10,4 +10,4 @@ python-dotenv
 requests
 marshmallow
 PyMuPDF 
-gunicorn app:app
+gunicorn
