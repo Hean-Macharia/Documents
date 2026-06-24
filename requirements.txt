@@ -9,4 +9,5 @@ Pillow
 python-dotenv
 requests
 marshmallow
-PyMuPDF         
+PyMuPDF 
+gunicorn app:app
