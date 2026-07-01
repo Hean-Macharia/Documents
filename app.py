@@ -71,9 +71,9 @@ PAGE_W = 612.0
 TODAY = date.today().strftime("%d %B %Y")
 
 DOCUMENT_PRICES = {
-    "medical": 1,
-    "sponsorship": 1,
-    "single_parent": 1,
+    "medical": 400,
+    "sponsorship": 300,
+    "single_parent": 300,
 }
 
 FORM_TYPE_DISPLAY = {
