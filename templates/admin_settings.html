@@ -2,10 +2,80 @@
 
 {% block title %}Settings{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ===== Signature Pad Styles (copied from index) ===== */
+    .signature-pad-container {
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        background: #ffffff;
+        margin-top: 0.5rem;
+        position: relative;
+    }
+    .canvas-wrapper {
+        position: relative;
+        border-bottom: 2px solid #e5e7eb;
+        background: #fafafa;
+        cursor: crosshair;
+    }
+    .canvas-wrapper canvas {
+        display: block;
+        width: 100%;
+        height: 150px;
+        touch-action: none;
+    }
+    .signature-line {
+        position: absolute;
+        bottom: 30px;
+        left: 20px;
+        right: 20px;
+        height: 1px;
+        background: #e5e7eb;
+        pointer-events: none;
+    }
+    .canvas-label {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #9ca3af;
+        font-size: 16px;
+        pointer-events: none;
+    }
+    .canvas-label.hidden { display: none; }
+    .signature-pad-container .signature-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 0 12px 12px;
+    }
+    .signature-pad-container .signature-status {
+        font-size: 0.75rem;
+        color: #64748b;
+        padding: 4px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .dot.empty { background: #d1d5db; }
+    .dot.filled { background: #10B981; }
+    .signature-pad-container .btn { font-size: 0.8rem; padding: 4px 12px; }
+    @media (max-width: 640px) {
+        .canvas-wrapper canvas { height: 120px; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">⚙️ Admin Settings</h1>
 
-<form id="settingsForm" enctype="multipart/form-data">
+<form id="settingsForm">
     <!-- ===== Medical Officer ===== -->
     <div class="card">
         <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">🏥 Medical Officer</h2>
@@ -27,9 +97,26 @@
                 <input type="text" id="med_reg_number" value="{{ settings.medical_officer.reg_number or '' }}" />
             </div>
         </div>
+
         <div class="form-group">
-            <label for="med_signature">Signature (image)</label>
-            <input type="file" id="med_signature" accept="image/*" />
+            <label>Signature</label>
+            <!-- Signature Pad -->
+            <div class="signature-pad-container" id="medSigPad">
+                <div class="canvas-wrapper">
+                    <canvas></canvas>
+                    <div class="signature-line"></div>
+                    <span class="canvas-label">Sign here</span>
+                </div>
+                <div class="signature-actions">
+                    <button type="button" class="btn btn-danger btn-sm signature-clear">✕ Clear</button>
+                </div>
+                <div class="signature-status">
+                    <span class="dot empty"></span>
+                    <span class="status-text">No signature</span>
+                </div>
+            </div>
+            <input type="hidden" id="med_signature_data" value="" />
+
             {% if settings.medical_officer.signature %}
                 <div style="margin-top: 0.5rem;">
                     <img src="{{ settings.medical_officer.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
@@ -56,9 +143,25 @@
                 <input type="tel" id="spo_sponsor_phone" value="{{ settings.sponsor.sponsor_telephone or '' }}" />
             </div>
         </div>
+
         <div class="form-group">
-            <label for="spo_signature">Signature (image)</label>
-            <input type="file" id="spo_signature" accept="image/*" />
+            <label>Signature</label>
+            <div class="signature-pad-container" id="spoSigPad">
+                <div class="canvas-wrapper">
+                    <canvas></canvas>
+                    <div class="signature-line"></div>
+                    <span class="canvas-label">Sign here</span>
+                </div>
+                <div class="signature-actions">
+                    <button type="button" class="btn btn-danger btn-sm signature-clear">✕ Clear</button>
+                </div>
+                <div class="signature-status">
+                    <span class="dot empty"></span>
+                    <span class="status-text">No signature</span>
+                </div>
+            </div>
+            <input type="hidden" id="spo_signature_data" value="" />
+
             {% if settings.sponsor.signature %}
                 <div style="margin-top: 0.5rem;">
                     <img src="{{ settings.sponsor.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
@@ -75,9 +178,25 @@
             <label for="comm_name">Commissioner Name</label>
             <input type="text" id="comm_name" value="{{ settings.commissioner.name or '' }}" />
         </div>
+
         <div class="form-group">
-            <label for="comm_signature">Signature (image)</label>
-            <input type="file" id="comm_signature" accept="image/*" />
+            <label>Signature</label>
+            <div class="signature-pad-container" id="commSigPad">
+                <div class="canvas-wrapper">
+                    <canvas></canvas>
+                    <div class="signature-line"></div>
+                    <span class="canvas-label">Sign here</span>
+                </div>
+                <div class="signature-actions">
+                    <button type="button" class="btn btn-danger btn-sm signature-clear">✕ Clear</button>
+                </div>
+                <div class="signature-status">
+                    <span class="dot empty"></span>
+                    <span class="status-text">No signature</span>
+                </div>
+            </div>
+            <input type="hidden" id="comm_signature_data" value="" />
+
             {% if settings.commissioner.signature %}
                 <div style="margin-top: 0.5rem;">
                     <img src="{{ settings.commissioner.signature }}" alt="Current signature" style="max-height: 60px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;" />
@@ -96,78 +215,304 @@
 
 {% block scripts %}
 <script>
-    document.getElementById('settingsForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    (function() {
+        'use strict';
 
-        // Helper to read file as base64
-        function readFileAsBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
+        // ============================================================
+        // Signature Pad Class (adapted from index)
+        // ============================================================
+        class SignaturePad {
+            constructor(container, savedImage = null) {
+                this.container = container;
+                this.canvas = container.querySelector('canvas');
+                if (!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                this.isDrawing = false;
+                this.lastX = 0;
+                this.lastY = 0;
+                this._hasDrawn = false;
+                this._savedImage = savedImage;
+                this.clearBtn = container.querySelector('.signature-clear');
+                this.statusDot = container.querySelector('.dot');
+                this.statusText = container.querySelector('.status-text');
+                this.hiddenInput = container.parentElement?.querySelector('input[type="hidden"]');
+                this.label = container.querySelector('.canvas-label');
+                this._initCanvas();
+                this._bindEvents();
+            }
 
-        // Collect text inputs
-        const getVal = id => document.getElementById(id).value.trim();
-        const data = {
-            med_officer_name: getVal('med_officer_name'),
-            med_hospital_name: getVal('med_hospital_name'),
-            med_designation: getVal('med_designation'),
-            med_reg_number: getVal('med_reg_number'),
-            spo_sponsor_name: getVal('spo_sponsor_name'),
-            spo_sponsor_email: getVal('spo_sponsor_email'),
-            spo_sponsor_phone: getVal('spo_sponsor_phone'),
-            comm_name: getVal('comm_name'),
-        };
-
-        // Process signature files if new ones are selected
-        const sigFields = ['med_signature', 'spo_signature', 'comm_signature'];
-        for (const fieldId of sigFields) {
-            const input = document.getElementById(fieldId);
-            if (input.files && input.files.length > 0) {
-                try {
-                    const base64 = await readFileAsBase64(input.files[0]);
-                    // Map to expected key in backend
-                    const keyMap = {
-                        'med_signature': 'med_signature',
-                        'spo_signature': 'spo_signature',
-                        'comm_signature': 'comm_signature'
+            _initCanvas() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const w = Math.max(rect.width - 16, 200);
+                const h = 150;
+                this.width = w;
+                this.height = h;
+                this.canvas.width = w * dpr;
+                this.canvas.height = h * dpr;
+                this.canvas.style.width = w + 'px';
+                this.canvas.style.height = h + 'px';
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                this.ctx.scale(dpr, dpr);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(0, 0, w, h);
+                if (this._savedImage) {
+                    const img = new Image();
+                    img.onload = () => {
+                        const iw = img.width, ih = img.height;
+                        const scale = Math.min((w - 20) / iw, (h - 20) / ih, 1);
+                        const dw = iw * scale, dh = ih * scale;
+                        const dx = (w - dw) / 2, dy = (h - dh) / 2;
+                        this.ctx.drawImage(img, dx, dy, dw, dh);
+                        this._hasDrawn = true;
+                        if (this.label) this.label.classList.add('hidden');
+                        this._updateStatus();
                     };
-                    data[keyMap[fieldId]] = base64;
-                } catch (err) {
-                    showToast('Failed to read signature file.', 'error');
-                    return;
+                    img.src = this._savedImage;
+                } else {
+                    if (this.label) this.label.classList.remove('hidden');
+                    this._hasDrawn = false;
+                    this._updateStatus();
+                }
+                this.ctx.strokeStyle = '#1a1a2e';
+                this.ctx.lineWidth = 3;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+            }
+
+            _bindEvents() {
+                const getPos = e => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: cx - rect.left, y: cy - rect.top };
+                };
+                const onStart = e => {
+                    e.preventDefault();
+                    this.isDrawing = true;
+                    const p = getPos(e);
+                    this.lastX = p.x;
+                    this.lastY = p.y;
+                    if (this.label) this.label.classList.add('hidden');
+                };
+                const onMove = e => {
+                    e.preventDefault();
+                    if (!this.isDrawing) return;
+                    const p = getPos(e);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.lastX, this.lastY);
+                    this.ctx.lineTo(p.x, p.y);
+                    this.ctx.stroke();
+                    this.lastX = p.x;
+                    this.lastY = p.y;
+                    this._hasDrawn = true;
+                };
+                const onEnd = () => {
+                    if (this.isDrawing) {
+                        this.isDrawing = false;
+                        this._savedImage = this.getCroppedData();
+                        this._updateStatus();
+                    }
+                };
+                this.canvas.addEventListener('mousedown', onStart);
+                this.canvas.addEventListener('mousemove', onMove);
+                this.canvas.addEventListener('mouseup', onEnd);
+                this.canvas.addEventListener('mouseleave', onEnd);
+                this.canvas.addEventListener('touchstart', onStart, { passive: false });
+                this.canvas.addEventListener('touchmove', onMove, { passive: false });
+                this.canvas.addEventListener('touchend', onEnd);
+                this.canvas.addEventListener('touchcancel', onEnd);
+                if (this.clearBtn) {
+                    this.clearBtn.addEventListener('click', () => this.clear());
+                }
+                const ro = new ResizeObserver(() => {
+                    clearTimeout(this._resizeTimer);
+                    this._resizeTimer = setTimeout(() => {
+                        const oldImage = this._savedImage;
+                        this._savedImage = oldImage;
+                        this._initCanvas();
+                    }, 150);
+                });
+                ro.observe(this.canvas.parentElement);
+            }
+
+            clear() {
+                this._savedImage = null;
+                this._hasDrawn = false;
+                const w = this.canvas.width / (window.devicePixelRatio || 1);
+                const h = this.canvas.height / (window.devicePixelRatio || 1);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fillRect(0, 0, w, h);
+                if (this.label) this.label.classList.remove('hidden');
+                this._updateStatus();
+            }
+
+            getCroppedData() {
+                if (!this._hasDrawn) return '';
+                const canvas = this.canvas;
+                const ctx = this.ctx;
+                const dpr = window.devicePixelRatio || 1;
+                const w = canvas.width;
+                const h = canvas.height;
+                const imageData = ctx.getImageData(0, 0, w, h);
+                const data = imageData.data;
+                let minX = w, minY = h, maxX = 0, maxY = 0;
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const i = (y * w + x) * 4;
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        if (r < 240 || g < 240 || b < 240) {
+                            if (x < minX) minX = x;
+                            if (x > maxX) maxX = x;
+                            if (y < minY) minY = y;
+                            if (y > maxY) maxY = y;
+                        }
+                    }
+                }
+                if (minX > maxX || minY > maxY) return '';
+                const pad = 10;
+                minX = Math.max(0, minX - pad);
+                minY = Math.max(0, minY - pad);
+                maxX = Math.min(w, maxX + pad);
+                maxY = Math.min(h, maxY + pad);
+                const cropW = maxX - minX;
+                const cropH = maxY - minY;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = cropW;
+                tempCanvas.height = cropH;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+                return tempCanvas.toDataURL('image/png');
+            }
+
+            _updateStatus() {
+                if (this.statusDot) {
+                    this.statusDot.className = 'dot ' + (this._hasDrawn ? 'filled' : 'empty');
+                }
+                if (this.statusText) {
+                    this.statusText.textContent = this._hasDrawn ? 'Signature drawn' : 'No signature';
+                }
+                if (this.hiddenInput) {
+                    this.hiddenInput.value = this._hasDrawn ? this.getCroppedData() : '';
                 }
             }
         }
 
-        // Disable submit button to prevent double‑click
-        const btn = this.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Saving...';
+        // ============================================================
+        // Initialize pads and handle form submission
+        // ============================================================
 
-        try {
-            const response = await fetch('/admin/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+        const pads = {};
+
+        function initPads() {
+            const containers = document.querySelectorAll('.signature-pad-container');
+            containers.forEach(container => {
+                const id = container.id;
+                // Determine which signature field this belongs to
+                let savedImage = null;
+                // We could optionally load existing signature from the preview img, but we'll keep it blank
+                const pad = new SignaturePad(container, savedImage);
+                pads[id] = pad;
             });
-            const result = await response.json();
-            if (result.success) {
-                showToast('Settings saved successfully!', 'success');
-                // Optionally reload to show updated images
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                showToast(result.error || 'Failed to save settings.', 'error');
-            }
-        } catch (e) {
-            showToast('Network error. Please try again.', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '💾 Save Settings';
         }
-    });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initPads();
+
+            document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Collect text inputs
+                const getVal = id => document.getElementById(id).value.trim();
+                const data = {
+                    med_officer_name: getVal('med_officer_name'),
+                    med_hospital_name: getVal('med_hospital_name'),
+                    med_designation: getVal('med_designation'),
+                    med_reg_number: getVal('med_reg_number'),
+                    spo_sponsor_name: getVal('spo_sponsor_name'),
+                    spo_sponsor_email: getVal('spo_sponsor_email'),
+                    spo_sponsor_phone: getVal('spo_sponsor_phone'),
+                    comm_name: getVal('comm_name'),
+                };
+
+                // Get signature data from hidden inputs
+                const sigFields = ['med_signature_data', 'spo_signature_data', 'comm_signature_data'];
+                for (const fieldId of sigFields) {
+                    const hidden = document.getElementById(fieldId);
+                    if (hidden) {
+                        const val = hidden.value.trim();
+                        if (val) {
+                            // Map to expected keys: med_signature, spo_signature, comm_signature
+                            const keyMap = {
+                                'med_signature_data': 'med_signature',
+                                'spo_signature_data': 'spo_signature',
+                                'comm_signature_data': 'comm_signature'
+                            };
+                            data[keyMap[fieldId]] = val;
+                        }
+                        // If empty, we won't include it, so existing remains (unless we want to clear)
+                        // But if user cleared, we might want to send empty to remove signature.
+                        // However, clear action sets hidden.value to ''; we'll send empty string to delete.
+                        // So we include even if empty to allow clearing.
+                        // Actually, we should include it always to allow updates/clears.
+                        // But we need to distinguish between "no change" and "clear".
+                        // We'll include the value regardless, so if it's empty, it will remove the signature.
+                        // That is intentional.
+                        const keyMap = {
+                            'med_signature_data': 'med_signature',
+                            'spo_signature_data': 'spo_signature',
+                            'comm_signature_data': 'comm_signature'
+                        };
+                        data[keyMap[fieldId]] = val; // even if empty, to clear
+                    }
+                }
+
+                // Disable submit button
+                const btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Saving...';
+
+                try {
+                    const response = await fetch('/admin/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('Settings saved successfully!', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast(result.error || 'Failed to save settings.', 'error');
+                    }
+                } catch (e) {
+                    showToast('Network error. Please try again.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '💾 Save Settings';
+                }
+            });
+        });
+
+        // Simple toast for admin (if not defined elsewhere)
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+                background: ${type === 'success' ? '#10B981' : '#EF4444'};
+                color: white; padding: 12px 24px; border-radius: 8px;
+                font-family: sans-serif; font-size: 0.9rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: opacity 0.3s;
+                max-width: 400px;
+            `;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    })();
 </script>
 {% endblock %}

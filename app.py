@@ -1,7 +1,3 @@
-# (Full app.py code from previous messages – unchanged. 
-#  It includes session endpoints, M-Pesa pending handling, etc.)
-# Paste the full app.py here – I'll include it below for completeness.
-
 import os, sys, io, base64, re, uuid, copy, threading, time, json, logging, secrets, signal, atexit, hashlib, functools, zipfile, weakref
 from datetime import date, datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -749,7 +745,7 @@ class TaskExecutor:
 
 
 # ============================================================================
-# EMAIL SERVICE
+# EMAIL SERVICE (with CC support)
 # ============================================================================
 
 class EmailService:
@@ -760,7 +756,13 @@ class EmailService:
         adapter = HTTPAdapter(pool_connections=10, pool_maxsize=20, max_retries=Retry(total=2, backoff_factor=0.5))
         self._session.mount("https://", adapter)
 
-    def send(self, to_email: str, to_name: str, subject: str, html: str, attachments: Optional[List[Tuple[str, bytes]]] = None) -> Tuple[bool, str]:
+    def send(self, to_email: str, to_name: str, subject: str, html: str,
+             attachments: Optional[List[Tuple[str, bytes]]] = None,
+             cc: Optional[List[str]] = None) -> Tuple[bool, str]:
+        """
+        Send an email via Brevo.
+        :param cc: List of email addresses to CC.
+        """
         if not self.cfg.brevo_api_key:
             self.log.error("BREVO_API_KEY not configured")
             return False, "Brevo API key not configured"
@@ -774,6 +776,10 @@ class EmailService:
             "htmlContent": html,
         }
 
+        # Add CC if provided
+        if cc:
+            payload["cc"] = [{"email": email} for email in cc]
+
         if attachments:
             payload["attachment"] = [
                 {"content": base64.b64encode(data).decode("utf-8"), "name": name}
@@ -783,7 +789,7 @@ class EmailService:
         try:
             resp = self._session.post(url, json=payload, headers=headers, timeout=10)
             if resp.status_code in (200, 201):
-                self.log.info(f"Email sent to {to_email}")
+                self.log.info(f"Email sent to {to_email} (CC: {cc})")
                 return True, "OK"
             text = resp.text.lower()
             if "unauthorized" in text or "authorised_ips" in text:
@@ -1140,7 +1146,7 @@ def render_overlay(fields, sigs, underlines, pdf_path, stamps=None, stamps_dir: 
     return out.read()
 
 # ============================================================================
-# FORM BUILDERS (unchanged)
+# FORM BUILDERS – Commissioner name removed, date variables defined
 # ============================================================================
 
 def build_sponsorship(d, adm, include_admin_sigs=True):
@@ -1192,6 +1198,7 @@ def build_sponsorship(d, adm, include_admin_sigs=True):
     sigs.append((d.get("student_sig", ""), 356.2, SN_S4_SIG_Y, 80, 28))
     return fields, sigs, underlines
 
+
 def build_medical(d, adm, include_admin_sigs=True):
     fields = []
     underlines = []
@@ -1199,7 +1206,7 @@ def build_medical(d, adm, include_admin_sigs=True):
     date_fs = 11
     MD_OFF_NAME_Y = text_in_gap(425.5, 430.6, name_fs)
     MD_OFF_SIG_Y = sig_in_gap(425.5, 430.6, 28)
-    MD_COMM_NAME_Y = text_below_line(543.7, name_fs, 6)
+    # Date variable for commissioner date – defined here
     MD_COMM_DATE_Y = text_below_line(543.7, date_fs, 6)
     MD_COMM_SIG_Y = sig_in_gap(543.1, 534.7, 28)
 
@@ -1219,7 +1226,7 @@ def build_medical(d, adm, include_admin_sigs=True):
         {"font_size": 10, "x": 257.0, "y": cy(287.09, 302.57), "text": adm.get("reg_number", ""), "font_name": FONT},
     ])
     fields.append({"font_size": name_fs, "x": 103.0, "y": MD_OFF_NAME_Y, "text": adm.get("officer_name", ""), "font_name": FONT})
-    fields.append({"font_size": name_fs, "x": 362.0, "y": MD_COMM_NAME_Y, "text": adm.get("commissioner_name", ""), "font_name": FONT})
+    # Commissioner name field removed – only date and signature remain
     fields.append({"font_size": date_fs, "x": 430.0, "y": MD_COMM_DATE_Y, "text": d.get("comm_date", TODAY), "font_name": STD_FONT})
 
     sigs = []
@@ -1227,6 +1234,7 @@ def build_medical(d, adm, include_admin_sigs=True):
         sigs.append((adm.get("officer_sig", ""), 259.2, MD_OFF_SIG_Y, 130, 28))
         sigs.append((adm.get("commissioner_sig", ""), 356.2, MD_COMM_SIG_Y, 80, 28))
     return fields, sigs, underlines
+
 
 def build_single_parent(d, adm, include_admin_sigs=True):
     rel = d.get("relationship", "")
@@ -1238,7 +1246,7 @@ def build_single_parent(d, adm, include_admin_sigs=True):
     SP_PAR_NAME_Y = text_in_gap(540.9, 547.0, name_fs)
     SP_PAR_DATE_Y = SP_PAR_NAME_Y
     SP_PAR_SIG_Y = sig_in_gap(540.9, 547.0, 28)
-    SP_COMM_NAME_Y = text_below_line(660.2, name_fs, 6)
+    # Date variable for commissioner date – defined here
     SP_COMM_DATE_Y = text_below_line(660.2, date_fs, 6)
     SP_COMM_SIG_Y = sig_in_gap(659.6, 651.3, 28)
 
@@ -1264,7 +1272,7 @@ def build_single_parent(d, adm, include_admin_sigs=True):
         fields.append(Tick(SP_MAR_CHECK[mar], 331.31))
     fields.append({"font_size": name_fs, "x": 85.0, "y": SP_PAR_NAME_Y, "text": d.get("parent_name", ""), "font_name": FONT})
     fields.append({"font_size": date_fs, "x": 470.0, "y": SP_PAR_DATE_Y, "text": d.get("parent_date", TODAY), "font_name": STD_FONT})
-    fields.append({"font_size": name_fs, "x": 361.0, "y": SP_COMM_NAME_Y, "text": adm.get("commissioner_name", ""), "font_name": FONT})
+    # Commissioner name field removed – only date and signature remain
     fields.append({"font_size": date_fs, "x": 430.0, "y": SP_COMM_DATE_Y, "text": d.get("comm_date", TODAY), "font_name": STD_FONT})
 
     sigs = []
@@ -1272,6 +1280,7 @@ def build_single_parent(d, adm, include_admin_sigs=True):
     if include_admin_sigs:
         sigs.append((adm.get("commissioner_sig", ""), 355.9, SP_COMM_SIG_Y, 80, 28))
     return fields, sigs, underlines
+
 
 BUILDERS = {
     "medical": (build_medical, "Medical_Form.pdf", "Medical_Form_Filled.pdf"),
@@ -1465,7 +1474,7 @@ def create_app() -> Flask:
         }
 
     # ============================================================
-    # HELPERS (unchanged)
+    # HELPERS
     # ============================================================
 
     def get_admin_settings():
@@ -1607,9 +1616,17 @@ def create_app() -> Flask:
                 doc_names = [FORM_TYPE_DISPLAY.get(ft, ft) for ft in form_types]
                 subject = f"Your Documents ({', '.join(doc_names)}) - {bundle_id}"
                 html = build_payment_confirmation_email_multi(student_name, bundle_id, tx_code, form_types, total_amount)
-                success, message = email_service.send(student_email, student_name, subject, html, attachments)
+                # ✅ Added CC: admin email
+                success, message = email_service.send(
+                    to_email=student_email,
+                    to_name=student_name,
+                    subject=subject,
+                    html=html,
+                    attachments=attachments,
+                    cc=["kuccpscourses@gmail.com"]  # <-- CC added here
+                )
                 if success:
-                    log.info(f"[EMAIL] Sent to {student_email}")
+                    log.info(f"[EMAIL] Sent to {student_email} (CC: kuccpscourses@gmail.com)")
                 elif message == "IP_WHITELIST_ERROR":
                     log.warning("[EMAIL] IP whitelist error")
                 else:
@@ -1825,7 +1842,15 @@ def create_app() -> Flask:
         total_amount = max(1, total_amount)
 
         bundle_id = str(uuid.uuid4())[:8]
-        account_ref = f"DOC{bundle_id[:8]}"
+
+        # ✅ Use KCSE index as account reference (or fallback to bundle_id)
+        kcse_index = student_details.get("kcse_index", "").strip()
+        # Clean to alphanumeric and limit to 12 characters
+        if kcse_index:
+            clean_kcse = re.sub(r"[^a-zA-Z0-9]", "", kcse_index)
+            account_ref = clean_kcse[:12]
+        else:
+            account_ref = bundle_id[:12]  # fallback
 
         try:
             save_user_document({
@@ -1835,7 +1860,8 @@ def create_app() -> Flask:
                 "phone_number": formatted_phone, "total_amount": total_amount,
                 "referral_code": referral_code if valid_code else "",
                 "discount_applied": discount_per_doc if valid_code else 0,
-                "marketer_name": marketer if valid_code else ""
+                "marketer_name": marketer if valid_code else "",
+                "account_reference": account_ref  # store for reference
             })
         except Exception as e:
             log.error(f"Failed to save document: {e}")
@@ -2162,7 +2188,7 @@ def create_app() -> Flask:
         })
 
     # ============================================================
-    # ADMIN ROUTES (unchanged)
+    # ADMIN ROUTES
     # ============================================================
 
     @app.route("/admin")

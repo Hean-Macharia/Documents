@@ -301,9 +301,115 @@
             #referralCodeInput { flex:1 1 100%; }
             .referral-row .btn { width:100%; }
         }
+
+        /* ====================================================== */
+        /* CAPTURE-DETERRENCE LAYER (site-wide)                    */
+        /* Note: these are UX deterrents only — no web technology  */
+        /* can truly block OS/hardware screenshots or screen       */
+        /* recording. See accompanying chat notes.                 */
+        /* ====================================================== */
+
+        /* Disable text selection & callouts everywhere except real inputs */
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        input, textarea, select,
+        input::selection, textarea::selection {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        /* Faint tiled traceability watermark across the whole site.
+           Barely visible in normal use, but shows up clearly in any
+           screenshot/recording and can carry a session fingerprint. */
+        .site-watermark {
+            position: fixed;
+            inset: 0;
+            z-index: 6000;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.05;
+        }
+        .site-watermark .tile-row {
+            display: flex;
+            white-space: nowrap;
+            transform: rotate(-28deg);
+            transform-origin: center;
+            position: absolute;
+            left: -20%;
+            width: 140%;
+        }
+        .site-watermark span {
+            font-family: var(--font);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: #0F172A;
+            margin: 0 28px;
+            text-transform: uppercase;
+        }
+
+        /* Full-screen block shown when we suspect devtools / an
+           active capture attempt during a sensitive view (preview). */
+        .capture-guard {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: #0F172A;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: var(--space-md);
+            color: #fff;
+            text-align: center;
+            padding: var(--space-xl);
+        }
+        .capture-guard.active { display: flex; }
+        .capture-guard .icon { font-size: 3rem; }
+        .capture-guard h3 { font-size: 1.3rem; font-weight: 700; }
+        .capture-guard p { color: rgba(255,255,255,0.7); max-width: 380px; font-size: 0.95rem; }
+
+        /* Blur applied to preview content when the tab/window loses
+           focus (e.g. switching to a screenshot/recording tool) */
+        .blur-on-blur { transition: filter 0.15s ease; }
+        .blur-on-blur.blurred { filter: blur(22px) brightness(0.7); }
+
+        /* Print protection: replace entire page with a notice */
+        @media print {
+            body * { visibility: hidden !important; }
+            body::before {
+                content: "Printing is disabled for this document. Please purchase and download the official stamped PDF instead.";
+                visibility: visible;
+                position: fixed;
+                top: 40%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-family: sans-serif;
+                font-size: 20px;
+                text-align: center;
+                width: 80%;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Site-wide faint traceability watermark (tiled, low-opacity) -->
+    <div class="site-watermark" id="siteWatermark" aria-hidden="true"></div>
+
+    <!-- Full-screen guard shown if devtools / capture activity is suspected -->
+    <div class="capture-guard" id="captureGuard" role="alert">
+        <div class="icon">🔒</div>
+        <h3>Content Protected</h3>
+        <p>This content is hidden while developer tools or a screen-capture tool appear to be active. Close them to continue.</p>
+    </div>
+
     <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
     <!-- ===== PREVIEW MODAL ===== -->
@@ -314,7 +420,7 @@
                 <button class="modal-close" id="previewModalClose" aria-label="Close preview">&times;</button>
             </div>
             <div class="modal-body" oncontextmenu="return false" onselectstart="return false" ondragstart="return false" oncopy="return false" oncut="return false" onpaste="return false" ontouchstart="return true" ontouchend="return true">
-                <div class="preview-wrapper" id="previewWrapper">
+                <div class="preview-wrapper blur-on-blur" id="previewWrapper">
                     <div class="preview-watermark" aria-hidden="true"><span>PREVIEW</span> <span>·</span> <span>ONLY</span></div>
                     <div id="previewContent" style="width:100%;height:100%;position:relative;z-index:1;">
                         <div class="preview-loading"><div class="spinner"></div><p>Generating preview…</p></div>
@@ -1048,6 +1154,14 @@
                 const formData = getFormDataForType(state.activeTab);
                 openModal('previewModal');
                 $('#previewModalTitle span').textContent = 'Preview: ' + FORM_TYPES[state.activeTab].label;
+
+                // Refresh the preview watermark with a live session tag + time
+                // so any screenshot of this preview is traceable to this session.
+                const wmEl = document.querySelector('.preview-watermark');
+                if (wmEl) {
+                    const stamp = new Date().toLocaleString('en-GB', { hour12: false });
+                    wmEl.innerHTML = `<span>PREVIEW</span> <span>·</span> <span>${CAPTURE.sessionTag || 'SESSION'}</span> <span>·</span> <span>${stamp}</span>`;
+                }
                 $('#previewContent').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:400px;"><span class="spinner" style="width:40px;height:40px;border-width:3px;"></span><span style="margin-left:16px;color:var(--text-secondary);">Generating preview...</span></div>';
 
                 let url = null;
@@ -1100,6 +1214,7 @@
                     if (isMobile && url) {
                         const cfg = FORM_TYPES[state.activeTab];
                         const today = new Date().toLocaleDateString('en-GB');
+                        const maskValue = v => { v = (v || '').toString(); return v.length <= 2 ? v : v.slice(0, 1) + '•'.repeat(Math.max(v.length - 2, 3)) + v.slice(-1); };
                         $('#previewContent').innerHTML = 
                             '<div class="mobile-preview-card">' +
                             '  <div class="doc-icon">&#128196;</div>' +
@@ -1132,6 +1247,10 @@
                 }
                 const blocker = document.getElementById('previewBlocker');
                 if (blocker) blocker.classList.remove('active');
+                const wrapper = document.getElementById('previewWrapper');
+                if (wrapper) wrapper.classList.remove('blurred');
+                CAPTURE.devtoolsOpen = false;
+                hideCaptureGuard();
             }
 
             // ============================================================
@@ -1319,46 +1438,177 @@
                 const previewModal = document.getElementById('previewModal');
                 const isPreviewActive = previewModal && previewModal.classList.contains('active');
 
+                // Save / Print / View-source / DevTools / Copy-Cut / F12 — blocked site-wide.
+                // (Reminder: this only stops the browser's own menu action; it cannot
+                // stop the OS-level screenshot/print-screen or an external camera.)
                 const blockedKeys = [
                     { ctrl: true, key: 's' }, { ctrl: true, key: 'p' }, { ctrl: true, key: 'u' },
-                    { ctrl: true, key: 'i' }, { ctrl: true, key: 'j' }, { ctrl: true, key: 'c' },
-                    { ctrl: true, key: 'v' }, { ctrl: true, key: 'x' }, { key: 'F12' },
+                    { ctrl: true, key: 'i' }, { ctrl: true, key: 'j' }, { key: 'F12' },
                 ];
-
                 for (const rule of blockedKeys) {
                     const ctrlMatch = rule.ctrl ? (e.ctrlKey || e.metaKey) : true;
                     const keyMatch = e.key === rule.key || e.key === rule.key.toUpperCase();
                     if (ctrlMatch && keyMatch) {
-                        if (isPreviewActive || rule.key === 's' || rule.key === 'p' || rule.key === 'F12') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            showToast('This action is not available in preview mode.', 'warning');
-                            return false;
-                        }
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showToast('This action is disabled on this site.', 'warning');
+                        return false;
                     }
                 }
 
+                // Copy/cut only blocked outside real form fields, so users can still
+                // type/paste into inputs normally.
+                const tag = (e.target.tagName || '').toLowerCase();
+                const isEditable = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
+                if (!isEditable && e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
                 if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
-                    if (isPreviewActive) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        showToast('Developer tools are disabled in preview mode.', 'warning');
-                        return false;
-                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showToast('Developer tools are disabled on this site.', 'warning');
+                    return false;
+                }
+
+                if (isPreviewActive) {
+                    // Extra-strict inside the document preview.
+                    showToast('This action is not available in preview mode.', 'warning');
                 }
                 return true;
             }
 
             function blockContextMenu(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast('Right-click is disabled on this site.', 'warning');
+                return false;
+            }
+
+            // ============================================================
+            // CAPTURE DETERRENCE (screenshot / screen-recording deterrents)
+            // Important: none of this can actually detect or block OS-level
+            // screenshots, Print Screen, or an external camera pointed at
+            // the screen. It raises friction and makes the preview content
+            // watermarked/traceable, and reacts to signals we CAN see
+            // (window blur, likely devtools, the Print Screen keyup event).
+            // ============================================================
+            const CAPTURE = { sessionTag: null, devtoolsOpen: false, devtoolsPoll: null };
+
+            function initSiteWatermark() {
+                const tag = CAPTURE.sessionTag;
+                const wrap = document.getElementById('siteWatermark');
+                if (!wrap) return;
+                const label = `SUPPORTING DOCS · ${tag}`;
+                let rowsHtml = '';
+                for (let r = 0; r < 14; r++) {
+                    let rowSpans = '';
+                    for (let c = 0; c < 8; c++) rowSpans += `<span>${label}</span>`;
+                    rowsHtml += `<div class="tile-row" style="top:${r * 90 - 200}px;">${rowSpans}</div>`;
+                }
+                wrap.innerHTML = rowsHtml;
+            }
+
+            function getSessionTag() {
+                let tag = sessionStorage.getItem('sd_session_tag');
+                if (!tag) {
+                    tag = Math.random().toString(36).slice(2, 8).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                    sessionStorage.setItem('sd_session_tag', tag);
+                }
+                return tag;
+            }
+
+            function showCaptureGuard(msg) {
+                const guard = document.getElementById('captureGuard');
+                if (!guard) return;
+                if (msg) guard.querySelector('p').textContent = msg;
+                guard.classList.add('active');
+            }
+            function hideCaptureGuard() {
+                document.getElementById('captureGuard')?.classList.remove('active');
+            }
+
+            // Heuristic devtools-open detector: compares outer/inner window
+            // dimensions (works for docked devtools) — not foolproof, but
+            // catches the common case, and we only act on it while the
+            // preview modal is open so normal browsing is never disrupted.
+            function checkDevtoolsHeuristic() {
+                const threshold = 160;
+                const widthDelta = window.outerWidth - window.innerWidth;
+                const heightDelta = window.outerHeight - window.innerHeight;
+                const suspected = widthDelta > threshold || heightDelta > threshold;
                 const previewModal = document.getElementById('previewModal');
                 const isPreviewActive = previewModal && previewModal.classList.contains('active');
-                if (isPreviewActive) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showToast('Right-click is disabled in preview mode.', 'warning');
-                    return false;
+
+                if (suspected && isPreviewActive) {
+                    if (!CAPTURE.devtoolsOpen) {
+                        CAPTURE.devtoolsOpen = true;
+                        showCaptureGuard('Developer tools were detected while previewing a document. Please close them to continue.');
+                        showToast('Preview hidden — developer tools detected.', 'warning');
+                    }
+                } else if (CAPTURE.devtoolsOpen) {
+                    CAPTURE.devtoolsOpen = false;
+                    hideCaptureGuard();
                 }
-                return true;
+            }
+
+            // Blur the preview whenever the window/tab loses focus (e.g. the
+            // user alt-tabs to a screenshot tool). Doesn't stop Print Screen
+            // (which doesn't blur the window), but does deter the common
+            // "switch to Snipping Tool" flow and screen-share glances.
+            function handleVisibilityOrBlur(hidden) {
+                const wrapper = document.getElementById('previewWrapper');
+                const previewModal = document.getElementById('previewModal');
+                const isPreviewActive = previewModal && previewModal.classList.contains('active');
+                if (!wrapper || !isPreviewActive) return;
+                wrapper.classList.toggle('blurred', hidden);
+            }
+
+            function handlePrintScreenKey(e) {
+                if (e.key === 'PrintScreen') {
+                    // We cannot prevent the OS from capturing the screen, but we
+                    // can react immediately after the fact.
+                    const previewModal = document.getElementById('previewModal');
+                    const isPreviewActive = previewModal && previewModal.classList.contains('active');
+                    showToast('Screenshots of this site are watermarked and traceable to your session.', 'warning');
+                    if (isPreviewActive) {
+                        const wrapper = document.getElementById('previewWrapper');
+                        wrapper?.classList.add('blurred');
+                        setTimeout(() => wrapper?.classList.remove('blurred'), 1200);
+                    }
+                }
+            }
+
+            function initCaptureDeterrence() {
+                CAPTURE.sessionTag = getSessionTag();
+                initSiteWatermark();
+
+                window.addEventListener('blur', () => handleVisibilityOrBlur(true));
+                window.addEventListener('focus', () => handleVisibilityOrBlur(false));
+                document.addEventListener('visibilitychange', () => handleVisibilityOrBlur(document.hidden));
+
+                document.addEventListener('keyup', handlePrintScreenKey);
+
+                CAPTURE.devtoolsPoll = setInterval(checkDevtoolsHeuristic, 800);
+
+                // Extra devtools signal: a debugger statement takes noticeably
+                // longer to step over when devtools is open and paused on it.
+                setInterval(() => {
+                    const previewModal = document.getElementById('previewModal');
+                    const isPreviewActive = previewModal && previewModal.classList.contains('active');
+                    if (!isPreviewActive) return;
+                    const start = performance.now();
+                    // eslint-disable-next-line no-debugger
+                    debugger;
+                    const delta = performance.now() - start;
+                    if (delta > 100 && !CAPTURE.devtoolsOpen) {
+                        CAPTURE.devtoolsOpen = true;
+                        showCaptureGuard('Developer tools were detected while previewing a document. Please close them to continue.');
+                        showToast('Preview hidden — developer tools detected.', 'warning');
+                    }
+                }, 1500);
             }
 
             // ============================================================
@@ -1367,6 +1617,10 @@
             function init() {
                 // Load session state (selections and form data)
                 loadSessionState();
+
+                // Capture / screenshot deterrence layer (watermark, blur-on-blur,
+                // devtools heuristics). See notes above initCaptureDeterrence().
+                initCaptureDeterrence();
 
                 // Restore payment state if page was refreshed during payment
                 if (restorePaymentState()) {
