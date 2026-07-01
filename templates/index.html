@@ -303,6 +303,42 @@
         }
 
         /* ====================================================== */
+        /* FIXED BOTTOM NAV (mobile & tablet only)                */
+        /* ====================================================== */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 900; /* stays under every modal (2000+) */
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -4px 20px rgba(15,23,42,0.08);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+        .mobile-bottom-nav .nav-tabs-row { display:flex; }
+        .mobile-bottom-nav .nav-tab-btn {
+            flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:4px; padding:10px 4px 8px; background:none; border:none; cursor:pointer;
+            color:var(--text-secondary); font-family:var(--font); font-size:0.68rem; font-weight:600;
+            position:relative; transition:color var(--transition-fast);
+        }
+        .mobile-bottom-nav .nav-tab-icon { font-size:1.35rem; line-height:1; }
+        .mobile-bottom-nav .nav-tab-indicator {
+            position:absolute; top:0; left:50%; width:60%; height:3px; border-radius:0 0 4px 4px;
+            background:linear-gradient(135deg,var(--emerald),var(--teal));
+            transform:translateX(-50%) scaleX(0); transition:transform var(--transition-base);
+        }
+        .mobile-bottom-nav .nav-tab-btn.active { color:var(--emerald); }
+        .mobile-bottom-nav .nav-tab-btn.active .nav-tab-indicator { transform:translateX(-50%) scaleX(1); }
+
+        @media (max-width:1024px) {
+            .mobile-bottom-nav { display:block; }
+            body { padding-bottom: 74px; } /* keeps page content from hiding behind the bar */
+        }
+
+        /* ====================================================== */
         /* CAPTURE-DETERRENCE LAYER (site-wide)                    */
         /* Note: these are UX deterrents only — no web technology  */
         /* can truly block OS/hardware screenshots or screen       */
@@ -531,6 +567,32 @@
         </div>
     </div>
 
+    <!-- ===== FIXED BOTTOM NAV (mobile/tablet) ===== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Quick document access">
+        <div class="nav-tabs-row">
+            <button type="button" class="nav-tab-btn active" data-nav="home">
+                <span class="nav-tab-indicator"></span>
+                <span class="nav-tab-icon">🏠</span>
+                <span>Home</span>
+            </button>
+            <button type="button" class="nav-tab-btn" data-nav="medical">
+                <span class="nav-tab-indicator"></span>
+                <span class="nav-tab-icon">🏥</span>
+                <span>Medical</span>
+            </button>
+            <button type="button" class="nav-tab-btn" data-nav="sponsorship">
+                <span class="nav-tab-indicator"></span>
+                <span class="nav-tab-icon">📝</span>
+                <span>Sponsor</span>
+            </button>
+            <button type="button" class="nav-tab-btn" data-nav="single_parent">
+                <span class="nav-tab-indicator"></span>
+                <span class="nav-tab-icon">👨‍👧</span>
+                <span>S.Parent</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- ===== NAVIGATION ===== -->
     <nav class="navbar" id="navbar">
         <div class="container">
@@ -633,7 +695,7 @@
     </div></section>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="footer"><div class="container"><div class="footer-grid"><div><a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a><p style="color:var(--text-secondary);font-size:0.9rem;">Official supporting document generation platform.</p></div><div><h4 style="color:var(--text-secondary);">Documents</h4><ul><li><a onclick="toggleDocument('medical')" style="cursor:pointer;">Medical Form</a></li><li><a onclick="toggleDocument('sponsorship')" style="cursor:pointer;">Sponsorship Letter</a></li><li><a onclick="toggleDocument('single_parent')" style="cursor:pointer;">Single Parent Cert</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Support</h4><ul><li><a href="#retrieve">Retrieve</a></li><li><a href="/admin">Admin</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Legal</h4><ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div></div><div style="display:flex;justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--border);"><span>&copy; 2026 Supporting Documents. All rights reserved.</span><span>Made with ❤ in Kenya</span></div></div></footer>
+    <footer class="footer"><div class="container"><div class="footer-grid"><div><a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a><p style="color:var(--text-secondary);font-size:0.9rem;">Official supporting document generation platform.</p></div><div><h4 style="color:var(--text-secondary);">Documents</h4><ul><li><a onclick="toggleDocument('medical')" style="cursor:pointer;">Medical Form</a></li><li><a onclick="toggleDocument('sponsorship')" style="cursor:pointer;">Sponsorship Letter</a></li><li><a onclick="toggleDocument('single_parent')" style="cursor:pointer;">Single Parent Cert</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Support</h4><ul><li><a href="#retrieve">Retrieve</a></li><li><a href="/admin">Admin</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Legal</h4><ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div></div><div style="display:flex;justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--border);"><span>&copy; 2026 Supporting Documents. All rights reserved.</span></div></div></footer>
 
     <!-- ============================================================ -->
     <!-- JAVASCRIPT (all logic with session persistence + fixed phone) -->
@@ -1612,6 +1674,43 @@
             }
 
             // ============================================================
+            // MOBILE BOTTOM NAV
+            // ============================================================
+            function setMobileNavActive(navKey) {
+                document.querySelectorAll('.mobile-bottom-nav .nav-tab-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.nav === navKey);
+                });
+            }
+
+            function openDocFromBottomNav(type) {
+                if (!state.selectedTypes.includes(type)) {
+                    state.selectedTypes.push(type);
+                    document.querySelector(`.form-type-card[data-type="${type}"]`)?.classList.add('selected');
+                    updateCartUI();
+                    saveSessionState(state.selectedTypes, state.formDataMap);
+                }
+                state.activeTab = type;
+                openDetailsModal();
+            }
+
+            function initMobileBottomNav() {
+                const nav = document.getElementById('mobileBottomNav');
+                if (!nav) return;
+                nav.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const key = btn.dataset.nav;
+                        setMobileNavActive(key);
+                        if (key === 'home') {
+                            closeModal('detailsModal');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                            openDocFromBottomNav(key);
+                        }
+                    });
+                });
+            }
+
+            // ============================================================
             // INIT
             // ============================================================
             function init() {
@@ -1621,6 +1720,9 @@
                 // Capture / screenshot deterrence layer (watermark, blur-on-blur,
                 // devtools heuristics). See notes above initCaptureDeterrence().
                 initCaptureDeterrence();
+
+                // Fixed bottom navigation (mobile & tablet quick-access bar)
+                initMobileBottomNav();
 
                 // Restore payment state if page was refreshed during payment
                 if (restorePaymentState()) {
