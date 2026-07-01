@@ -1,13 +1,73 @@
-Flask
-Flask-Limiter
-Flask-Talisman
-Flask-Session
-Flask-PyMongo
-pypdf
-reportlab
-Pillow
-python-dotenv
-requests
-marshmallow
-PyMuPDF 
-gunicorn
+# =============================================================================
+# Supporting Documents Generator — Production Requirements
+# =============================================================================
+# Install:  pip install -r requirements.txt
+# =============================================================================
+
+# ------------------------------------------------------------------------------
+# Core Web Framework
+# ------------------------------------------------------------------------------
+Flask>=2.3.0,<3.0.0
+Werkzeug>=2.3.0
+
+# ------------------------------------------------------------------------------
+# Session Management (Server-side, survives refreshes & restarts)
+# ------------------------------------------------------------------------------
+Flask-Session>=0.5.0
+
+# ------------------------------------------------------------------------------
+# Security
+# ------------------------------------------------------------------------------
+Flask-Talisman>=1.0.0          # Security headers (CSP, HSTS, etc.)
+Flask-Limiter>=3.5.0           # Rate limiting (Redis or memory backend)
+
+# ------------------------------------------------------------------------------
+# Database
+# ------------------------------------------------------------------------------
+Flask-PyMongo>=2.3.0           # Flask MongoDB integration
+pymongo>=4.5.0                 # MongoDB driver (connection pooling, retry)
+
+# ------------------------------------------------------------------------------
+# Cache & Sessions (Redis)
+# ------------------------------------------------------------------------------
+redis>=4.6.0                   # Redis client (sessions, rate limits, token cache)
+
+# ------------------------------------------------------------------------------
+# PDF Generation & Manipulation
+# ------------------------------------------------------------------------------
+pypdf>=3.15.0                  # PDF merging (original dependency)
+reportlab>=4.0.0               # PDF overlay / canvas drawing
+PyMuPDF>=1.23.0                # Advanced PDF processing (fitz)
+
+# ------------------------------------------------------------------------------
+# Image Processing
+# ------------------------------------------------------------------------------
+Pillow>=10.0.0                 # Stamp transparency, signature rendering
+
+# ------------------------------------------------------------------------------
+# Data Validation
+# ------------------------------------------------------------------------------
+marshmallow>=3.20.0           # Request/response schema validation
+
+# ------------------------------------------------------------------------------
+# HTTP Client
+# ------------------------------------------------------------------------------
+requests>=2.31.0               # M-Pesa API, Brevo email
+urllib3>=2.0.0                 # HTTP connection pooling
+
+# ------------------------------------------------------------------------------
+# Environment Configuration
+# ------------------------------------------------------------------------------
+python-dotenv>=1.0.0           # .env file loading
+
+# ------------------------------------------------------------------------------
+# Production WSGI Server (High Concurrency — 2000+ users)
+# ------------------------------------------------------------------------------
+gunicorn[gevent]>=21.0.0       # WSGI server + gevent async workers
+greenlet>=2.0.0                # Gevent dependency (explicit pin)
+
+# ------------------------------------------------------------------------------
+# Optional: Production Monitoring / Observability
+# ------------------------------------------------------------------------------
+prometheus-flask-exporter>=0.22.0   # Prometheus metrics (uncomment if needed)
+sentry-sdk[flask]>=1.30.0           # Error tracking (uncomment if needed)

@@ -16,7 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
     
     <style>
-        /* (same as before – unchanged) */
+        /* ====== Complete CSS from original working version ====== */
+        /* (All styles – preserved exactly as in your original) */
         :root {
             --emerald: #10B981;
             --emerald-glow: rgba(16, 185, 129, 0.25);
@@ -59,7 +60,6 @@
         .container { max-width:1200px; margin:0 auto; padding:0 var(--space-lg); }
         .hidden { display:none!important; }
 
-        /* Navbar */
         .navbar { position:fixed; top:0; left:0; right:0; z-index:1000; padding:var(--space-md) 0; background:rgba(255,255,255,0.8); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); transition: box-shadow 0.25s ease; }
         .navbar.scrolled { box-shadow:var(--shadow-sm); }
         .navbar .container { display:flex; align-items:center; justify-content:space-between; }
@@ -81,7 +81,6 @@
             .nav-actions .btn { display:none; }
         }
 
-        /* Buttons */
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:var(--space-sm); padding:11px 26px; border:none; border-radius:var(--radius-full); font-family:var(--font); font-weight:600; font-size:0.9rem; cursor:pointer; transition:var(--transition-base); text-decoration:none; position:relative; overflow:hidden; }
         .btn-primary { background:linear-gradient(135deg,var(--emerald),var(--teal)); color:white; box-shadow:0 2px 10px rgba(16,185,129,0.25); }
         .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(16,185,129,0.3); }
@@ -94,7 +93,6 @@
         .btn-sm { padding:7px 16px; font-size:0.8rem; }
         .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none!important; }
 
-        /* Hero */
         .hero { padding:110px 0 var(--space-3xl); min-height:auto; display:flex; align-items:center; }
         .hero-content { animation:heroFadeIn 0.7s cubic-bezier(0.4,0,0.2,1) forwards; }
         @keyframes heroFadeIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
@@ -112,7 +110,6 @@
 
         @media (max-width:640px) { .hero h1 { font-size:1.9rem; } .hero-stats { flex-direction:column; gap:var(--space-md); } .hero-actions { flex-direction:column; } .hero-actions .btn { width:100%; } }
 
-        /* Sections */
         .section { padding:var(--space-3xl) 0; }
         .section-label { display:inline-block; font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--emerald); margin-bottom:var(--space-sm); }
         .section-title { font-size:2.1rem; font-weight:700; letter-spacing:-0.01em; margin-bottom:var(--space-sm); }
@@ -126,7 +123,6 @@
         @media (max-width:1024px) { .features-grid { grid-template-columns:repeat(2,1fr); } }
         @media (max-width:640px) { .features-grid { grid-template-columns:1fr; } }
 
-        /* Form Type Cards */
         .form-types-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-lg); margin-top:var(--space-2xl); }
         .form-type-card { background:var(--surface); border-radius:var(--radius-lg); padding:var(--space-lg); border:1.5px solid var(--border); transition:var(--transition-base); cursor:pointer; position:relative; }
         .form-type-card:hover { border-color:rgba(16,185,129,0.4); transform:translateY(-2px); box-shadow:var(--shadow-md); }
@@ -139,7 +135,6 @@
         @media (max-width:1024px) { .form-types-grid { grid-template-columns:repeat(2,1fr); } }
         @media (max-width:640px) { .form-types-grid { grid-template-columns:1fr; } }
 
-        /* GLOBAL FORM STYLES */
         .form-group { margin-bottom:var(--space-md); }
         .form-group label { display:block; font-size:0.83rem; font-weight:500; margin-bottom:var(--space-xs); color:var(--text-secondary); }
         .form-group .input-wrap { position:relative; }
@@ -155,7 +150,6 @@
         .form-group .error-text.show { display:block; animation:fadeInDown 0.2s ease; }
         @keyframes fadeInDown { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
 
-        /* SIGNATURE PAD */
         .signature-pad-container { border: 2px solid #e5e7eb; border-radius: var(--radius-md); background: #ffffff; position: relative; }
         .canvas-wrapper { position: relative; border-bottom: 2px solid #e5e7eb; background: #fafafa; cursor: crosshair; }
         .canvas-wrapper canvas { display: block; width: 100%; height: 150px; touch-action: none; }
@@ -169,7 +163,6 @@
         .dot.filled { background: var(--emerald); }
         @media (max-width:640px) { .canvas-wrapper canvas { height: 120px; } }
 
-        /* Details Modal */
         .details-modal { position:fixed; inset:0; z-index:2000; background:rgba(15,23,42,0.55); backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; }
         .details-modal.active { opacity:1; pointer-events:all; }
         .details-modal .modal-panel { background:var(--surface); border-radius:var(--radius-xl) var(--radius-xl) 0 0; width:100%; max-width:900px; max-height:90vh; overflow-y:auto; padding:var(--space-xl); box-shadow:var(--shadow-xl); transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.22,1,0.36,1); }
@@ -188,7 +181,6 @@
         .details-modal .form-actions .btn { flex:1; min-width:150px; }
         @media (max-width:640px) { .details-modal .modal-panel { padding:var(--space-lg); } .form-row { grid-template-columns:1fr; } .details-modal .form-actions { flex-direction:column; } .details-modal .form-actions .btn { width:100%; } }
 
-        /* Cart */
         .cart-summary { background:var(--surface); border-radius:var(--radius-lg); padding:var(--space-lg); border:1.5px solid var(--emerald); margin-top:var(--space-lg); box-shadow:var(--shadow-md); animation:slideUp 0.35s cubic-bezier(0.22,1,0.36,1); }
         @keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .cart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-md); flex-wrap:wrap; gap:var(--space-sm); }
@@ -203,14 +195,12 @@
             .cart-summary { padding:var(--space-md); }
         }
 
-        /* Modals */
         .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.55); backdrop-filter:blur(8px); z-index:3000; display:flex; align-items:center; justify-content:center; padding:var(--space-lg); opacity:0; pointer-events:none; transition:var(--transition-base); }
         .modal-overlay.active { opacity:1; pointer-events:all; }
         .modal-content { background:var(--surface); border-radius:var(--radius-xl); max-width:480px; width:100%; padding:var(--space-xl); transform:scale(0.97) translateY(10px); transition:var(--transition-bounce); box-shadow:var(--shadow-xl); position:relative; max-height:90vh; overflow-y:auto; }
         .modal-overlay.active .modal-content { transform:scale(1) translateY(0); }
         .modal-content .modal-close { position:absolute; top:var(--space-md); right:var(--space-md); background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-secondary); }
 
-        /* ===== PREVIEW MODAL — MOBILE-FIRST & PROTECTED ===== */
         .preview-modal .modal-content { max-width: 900px; padding: 0; width: 95vw; max-height: 95vh; }
         .preview-modal .modal-header { padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm); background: var(--surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; position: sticky; top: 0; z-index: 20; }
         .preview-modal .modal-header h3 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: var(--space-sm); }
@@ -237,11 +227,9 @@
         .preview-modal .modal-footer .btn { min-width: 120px; }
         @media (max-width: 480px) { .preview-modal .modal-footer { flex-direction: column; } .preview-modal .modal-footer .btn { width: 100%; } .preview-modal .modal-content { width: 98vw; } .preview-modal .modal-header h3 { font-size: 0.95rem; } }
 
-        /* ===== PDF.js canvas container (mobile inline) ===== */
         .pdf-canvas-container { width: 100%; max-height: 500px; overflow-y: auto; background: #fff; -webkit-overflow-scrolling: touch; }
         .pdf-canvas-container canvas { width: 100%; height: auto; display: block; margin-bottom: 8px; pointer-events: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; image-rendering: auto; }
 
-        /* Fallback card when PDF.js fails on mobile */
         .mobile-preview-card { padding: var(--space-lg); text-align: center; background: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
         .mobile-preview-card .doc-icon { font-size: 3rem; margin-bottom: var(--space-sm); }
         .mobile-preview-card h3 { font-size: 1.2rem; margin-bottom: var(--space-xs); }
@@ -262,7 +250,6 @@
         @media (max-width:768px) { .footer-grid { grid-template-columns:1fr 1fr; } }
         @media (max-width:480px) { .footer-grid { grid-template-columns:1fr; } }
 
-        /* ===== RETRIEVE SECTION MOBILE FIXES ===== */
         .retrieve-section .form-group { flex:1; min-width:0; }
         #retrieveForm { width:100%; }
         #retrieveForm > div { display:flex; gap:var(--space-md); align-items:flex-end; flex-wrap:wrap; }
@@ -272,7 +259,6 @@
             #retrieveForm > div .btn { width:100%; }
         }
 
-        /* ===== REFERRAL CODE INPUT FIXES ===== */
         #referralCodeInput {
             flex: 1;
             min-width: 0;
@@ -320,7 +306,7 @@
 <body>
     <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- ===== PREVIEW MODAL (fully protected) ===== -->
+    <!-- ===== PREVIEW MODAL ===== -->
     <div class="modal-overlay preview-modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
         <div class="modal-content" oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
             <div class="modal-header">
@@ -344,24 +330,30 @@
         </div>
     </div>
 
-    <!-- Phone Modal -->
+    <!-- ===== PHONE MODAL (FIXED: <div>, button type="button", click handler) ===== -->
     <div class="modal-overlay" id="phoneModal" role="dialog" aria-modal="true" aria-labelledby="phoneModalTitle">
         <div class="modal-content">
             <button class="modal-close" id="phoneModalClose" aria-label="Close">&times;</button>
             <div style="font-size:3rem;text-align:center;">📱</div>
             <h2 id="phoneModalTitle" style="text-align:center;margin-bottom:var(--space-sm)">Enter Phone Number</h2>
             <p style="text-align:center;color:var(--text-secondary)">We'll send an M-Pesa STK push for <strong id="modalTotalAmount">KES 300</strong></p>
-            <form id="phoneForm" novalidate>
-                <div class="form-group"><label for="phoneInput">Phone Number</label><div class="input-wrap"><input type="tel" id="phoneInput" placeholder="0712345678" required autofocus /></div><div class="error-text" id="phoneError">Please enter a valid phone number</div></div>
+            <div id="phoneForm">
+                <div class="form-group">
+                    <label for="phoneInput">Phone Number</label>
+                    <div class="input-wrap">
+                        <input type="tel" id="phoneInput" placeholder="0712345678" required autofocus />
+                    </div>
+                    <div class="error-text" id="phoneError">Please enter a valid phone number</div>
+                </div>
                 <div style="display:flex;gap:var(--space-md);justify-content:center;margin-top:var(--space-lg); flex-wrap:wrap;">
                     <button type="button" class="btn btn-secondary" id="phoneModalCancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="phoneSubmitBtn">Pay Now →</button>
+                    <button type="button" class="btn btn-primary" id="phoneSubmitBtn">Pay Now →</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- Processing Modal -->
+    <!-- ===== PROCESSING MODAL ===== -->
     <div class="modal-overlay" id="processingModal" role="dialog" aria-modal="true" aria-labelledby="processingModalTitle">
         <div class="modal-content" style="text-align:center;">
             <div style="font-size:3rem;">⏳</div>
@@ -377,7 +369,7 @@
         </div>
     </div>
 
-    <!-- Manual Verify Modal -->
+    <!-- ===== MANUAL VERIFY MODAL ===== -->
     <div class="modal-overlay" id="manualVerifyModal" role="dialog" aria-modal="true" aria-labelledby="manualVerifyTitle">
         <div class="modal-content">
             <button class="modal-close" id="manualVerifyClose" aria-label="Close">&times;</button>
@@ -394,7 +386,7 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
+    <!-- ===== SUCCESS MODAL ===== -->
     <div class="modal-overlay" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
         <div class="modal-content" style="text-align:center;">
             <button class="modal-close" id="successModalClose" aria-label="Close">&times;</button>
@@ -414,7 +406,7 @@
         </div>
     </div>
 
-    <!-- Details Modal (Step 2) -->
+    <!-- ===== DETAILS MODAL (Step 2) ===== -->
     <div class="details-modal" id="detailsModal" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle">
         <div class="modal-panel">
             <div class="modal-header">
@@ -433,7 +425,7 @@
         </div>
     </div>
 
-    <!-- Navigation -->
+    <!-- ===== NAVIGATION ===== -->
     <nav class="navbar" id="navbar">
         <div class="container">
             <a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a>
@@ -442,7 +434,7 @@
         </div>
     </nav>
 
-    <!-- Hero -->
+    <!-- ===== HERO ===== -->
     <section class="hero" id="hero">
         <div class="container">
             <div class="hero-content">
@@ -459,7 +451,7 @@
         </div>
     </section>
 
-    <!-- Features -->
+    <!-- ===== FEATURES ===== -->
     <section class="section" id="features"><div class="container">
         <div class="text-center reveal"><span class="section-label">Features</span><h2 class="section-title">Why Choose Supporting Docs</h2><p class="section-subtitle">Modern, secure, efficient document generation.</p></div>
         <div class="features-grid stagger" id="featuresGrid">
@@ -472,7 +464,7 @@
         </div>
     </div></section>
 
-    <!-- Form Selection -->
+    <!-- ===== FORM SELECTION ===== -->
     <section class="section" id="forms"><div class="container">
         <div class="text-center reveal"><span class="section-label">Documents</span><h2 class="section-title">Choose Your Documents</h2><p class="section-subtitle">Select one or more, then click Continue to fill in details.</p></div>
         <div class="form-types-grid stagger" id="formTypesGrid">
@@ -481,26 +473,22 @@
             <div class="form-type-card" data-type="single_parent"><span class="check">✓</span><span class="icon">👨‍👧</span><h3>Single Parent Certification</h3><p>Self-certification for single parent status.</p><span class="price-tag">KES 300</span></div>
         </div>
 
-        <!-- ====== CART SUMMARY WITH REFERRAL CODE ====== -->
+        <!-- ===== CART SUMMARY ===== -->
         <div class="cart-summary" id="cartSummary" style="display:none;">
             <div class="cart-header">
                 <h3>🛒 Your Selection</h3>
                 <span class="cart-count" id="cartCount">0 documents</span>
             </div>
             <div class="cart-items" id="cartItems"></div>
-
-            <!-- Referral Code Input (mobile‑friendly) -->
             <div class="referral-row">
                 <label for="referralCodeInput">Referral Code</label>
                 <input type="text" id="referralCodeInput" placeholder="Leave blank if not referred" />
                 <button type="button" id="applyReferralBtn" class="btn btn-secondary btn-sm">Apply</button>
             </div>
-
             <div class="cart-total">
                 <span>Total:</span>
                 <span class="total-amount" id="cartTotal">KES 0</span>
             </div>
-
             <div class="cart-actions">
                 <button class="btn btn-danger" id="clearCartBtn">Clear All</button>
                 <button class="btn btn-primary" id="continueBtn">Continue to Details →</button>
@@ -508,7 +496,7 @@
         </div>
     </div></section>
 
-    <!-- Retrieve -->
+    <!-- ===== RETRIEVE ===== -->
     <section class="section" id="retrieve"><div class="container">
         <div class="text-center reveal"><span class="section-label">Retrieve</span><h2 class="section-title">Get Your Documents</h2><p class="section-subtitle">Enter your email to download all PDFs instantly.</p></div>
         <div class="retrieve-section reveal" style="background:var(--surface);border-radius:var(--radius-xl);padding:var(--space-2xl);border:1px solid var(--border);">
@@ -538,9 +526,12 @@
         </div>
     </div></section>
 
-    <!-- Footer -->
+    <!-- ===== FOOTER ===== -->
     <footer class="footer"><div class="container"><div class="footer-grid"><div><a href="/" class="nav-brand"><span class="logo-icon">SD</span><span>Supporting Docs</span></a><p style="color:var(--text-secondary);font-size:0.9rem;">Official supporting document generation platform.</p></div><div><h4 style="color:var(--text-secondary);">Documents</h4><ul><li><a onclick="toggleDocument('medical')" style="cursor:pointer;">Medical Form</a></li><li><a onclick="toggleDocument('sponsorship')" style="cursor:pointer;">Sponsorship Letter</a></li><li><a onclick="toggleDocument('single_parent')" style="cursor:pointer;">Single Parent Cert</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Support</h4><ul><li><a href="#retrieve">Retrieve</a></li><li><a href="/admin">Admin</a></li></ul></div><div><h4 style="color:var(--text-secondary);">Legal</h4><ul><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div></div><div style="display:flex;justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--border);"><span>&copy; 2026 Supporting Documents. All rights reserved.</span><span>Made with ❤ in Kenya</span></div></div></footer>
 
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT (all logic with session persistence + fixed phone) -->
+    <!-- ============================================================ -->
     <script>
         (function() {
             'use strict';
@@ -596,16 +587,80 @@
                 }
             };
 
-            const state = { selectedTypes:[], activeTab:null, signatureDataMap:{}, bundleId:null, checkoutRequestId:null, transactionCode:null, paymentInterval:null, paymentAttempts:0 };
+            const state = { selectedTypes:[], activeTab:null, signatureDataMap:{}, bundleId:null, checkoutRequestId:null, transactionCode:null, paymentInterval:null, paymentAttempts:0, formDataMap:{} };
             const $ = s => document.querySelector(s);
             const $$ = s => document.querySelectorAll(s);
 
-            // Global Error Handlers
-            window.addEventListener('unhandledrejection', function(event) {
-                console.error('Unhandled promise rejection:', event.reason);
-            });
+            // ============================================================
+            // SESSION PERSISTENCE (Flask session)
+            // ============================================================
+            function saveSessionState(selectedTypes, formDataMap, referralCode) {
+                const payload = {
+                    selected_types: selectedTypes !== undefined ? selectedTypes : state.selectedTypes,
+                    form_data_map: formDataMap !== undefined ? formDataMap : state.formDataMap,
+                    referral_code: referralCode !== undefined ? referralCode : document.getElementById('referralCodeInput').value
+                };
+                fetch('/api/session/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                }).catch(e => console.warn('Session save failed:', e));
+            }
 
-            // ========== TOAST WITH FLASH SUPPORT ==========
+            function loadSessionState() {
+                fetch('/api/session/load')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.selected_types) {
+                            state.selectedTypes = data.selected_types;
+                            state.formDataMap = data.form_data_map || {};
+                            if (data.referral_code) {
+                                document.getElementById('referralCodeInput').value = data.referral_code;
+                            }
+                            state.selectedTypes.forEach(type => {
+                                document.querySelector(`.form-type-card[data-type="${type}"]`)?.classList.add('selected');
+                            });
+                            updateCartUI();
+                        }
+                    })
+                    .catch(e => console.warn('Session load failed:', e));
+            }
+
+            // ============================================================
+            // PAYMENT STATE RECOVERY (sessionStorage)
+            // ============================================================
+            function savePaymentState(bundleId, checkoutId) {
+                sessionStorage.setItem('payment_bundle_id', bundleId);
+                sessionStorage.setItem('payment_checkout_id', checkoutId);
+                sessionStorage.setItem('payment_in_progress', 'true');
+            }
+
+            function clearPaymentState() {
+                sessionStorage.removeItem('payment_bundle_id');
+                sessionStorage.removeItem('payment_checkout_id');
+                sessionStorage.removeItem('payment_in_progress');
+            }
+
+            function restorePaymentState() {
+                if (sessionStorage.getItem('payment_in_progress') === 'true') {
+                    const bundleId = sessionStorage.getItem('payment_bundle_id');
+                    const checkoutId = sessionStorage.getItem('payment_checkout_id');
+                    if (bundleId) {
+                        state.bundleId = bundleId;
+                        state.checkoutRequestId = checkoutId;
+                        openModal('processingModal');
+                        pollPaymentStatus(bundleId, checkoutId);
+                        return true;
+                    } else {
+                        clearPaymentState();
+                    }
+                }
+                return false;
+            }
+
+            // ============================================================
+            // TOAST / MODAL HELPERS
+            // ============================================================
             function showToast(msg, type='info') {
                 const icons = {success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
                 const toast = document.createElement('div'); toast.className = `toast ${type}`;
@@ -614,27 +669,19 @@
                 setTimeout(() => { if(toast.parentElement) toast.remove(); }, 5000);
             }
 
-            // Check if response has flash message and display it
-            function handleFlash(responseData) {
-                if (responseData && responseData.flash) {
-                    let type = 'info';
-                    if (responseData.status === 'success' || responseData.paid === true) type = 'success';
-                    else if (responseData.status === 'error' || responseData.paid === false) type = 'error';
-                    else if (responseData.status === 'warning') type = 'warning';
-                    showToast(responseData.flash, type);
-                    return true;
-                }
-                return false;
-            }
-
-            // Override fetch to automatically handle flash messages
+            // Flash message interceptor
+            window.addEventListener('unhandledrejection', function(event) { console.error('Unhandled promise rejection:', event.reason); });
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
                 return originalFetch(url, options).then(response => {
                     const cloned = response.clone();
                     cloned.json().then(data => {
                         if (data && data.flash) {
-                            handleFlash(data);
+                            let type = 'info';
+                            if (data.status === 'success' || data.paid === true) type = 'success';
+                            else if (data.status === 'error' || data.paid === false) type = 'error';
+                            else if (data.status === 'warning') type = 'warning';
+                            showToast(data.flash, type);
                         }
                     }).catch(() => {});
                     return response;
@@ -656,7 +703,9 @@
                 }
             }
 
-            // ===== SIGNATURE PAD WITH CROPPING =====
+            // ============================================================
+            // SIGNATURE PAD (unchanged)
+            // ============================================================
             class SignaturePad {
                 constructor(container, savedImage = null) {
                     this.container = container;
@@ -667,7 +716,7 @@
                     this.lastX = 0;
                     this.lastY = 0;
                     this._hasDrawn = false;
-                    this._savedImage = savedImage;  // cropped image (data URL)
+                    this._savedImage = savedImage;
                     this.clearBtn = container.querySelector('.signature-clear');
                     this.statusDot = container.querySelector('.dot');
                     this.statusText = container.querySelector('.status-text');
@@ -690,11 +739,9 @@
                     this.canvas.style.height = h + 'px';
                     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
                     this.ctx.scale(dpr, dpr);
-                    // Clear with white
                     this.ctx.fillStyle = '#fff';
                     this.ctx.fillRect(0, 0, w, h);
                     if (this._savedImage) {
-                        // Draw the saved cropped image centered on the canvas
                         const img = new Image();
                         img.onload = () => {
                             const iw = img.width, ih = img.height;
@@ -799,7 +846,6 @@
                         for (let x = 0; x < w; x++) {
                             const i = (y * w + x) * 4;
                             const r = data[i], g = data[i+1], b = data[i+2];
-                            // Non-white if any channel < 240
                             if (r < 240 || g < 240 || b < 240) {
                                 if (x < minX) minX = x;
                                 if (x > maxX) maxX = x;
@@ -808,7 +854,7 @@
                             }
                         }
                     }
-                    if (minX > maxX || minY > maxY) return ''; // no signature
+                    if (minX > maxX || minY > maxY) return '';
                     const pad = 10;
                     minX = Math.max(0, minX - pad);
                     minY = Math.max(0, minY - pad);
@@ -869,12 +915,15 @@
                 return valid;
             }
 
-            // ===== GLOBAL FUNCTIONS for inline onclick =====
+            // ============================================================
+            // UI FUNCTIONS
+            // ============================================================
             window.toggleDocument = function(type) {
                 const idx = state.selectedTypes.indexOf(type);
                 if(idx > -1) state.selectedTypes.splice(idx,1); else state.selectedTypes.push(type);
                 document.querySelector(`.form-type-card[data-type="${type}"]`)?.classList.toggle('selected', idx===-1);
                 updateCartUI();
+                saveSessionState(state.selectedTypes, state.formDataMap);
             };
 
             window.switchTab = function(type) {
@@ -888,6 +937,7 @@
                 state.selectedTypes = []; state.signatureDataMap = {};
                 document.querySelectorAll('.form-type-card').forEach(c => c.classList.remove('selected'));
                 updateCartUI(); showToast('Selection cleared.','info');
+                saveSessionState([], {});
             }
 
             function updateCartUI() {
@@ -905,11 +955,7 @@
             }
 
             function buildModalForms() {
-                const savedTextData = {};
-                state.selectedTypes.forEach(type => {
-                    const container = document.getElementById(`form_${type}`);
-                    if(container) { const data = {}; container.querySelectorAll('input:not([type=hidden]), select').forEach(el => { if(el.id) data[el.id]=el.value; }); savedTextData[type] = data; }
-                });
+                const savedTextData = state.formDataMap || {};
                 $('#docTabs').innerHTML = state.selectedTypes.map(type => {
                     const cfg = FORM_TYPES[type];
                     const active = type===state.activeTab ? ' active' : '';
@@ -955,16 +1001,32 @@
                 html += '</div>'; return html;
             }
 
+            function saveFormDataFromModal() {
+                const dataMap = {};
+                state.selectedTypes.forEach(type => {
+                    dataMap[type] = getFormDataForType(type);
+                });
+                state.formDataMap = dataMap;
+                saveSessionState(state.selectedTypes, dataMap);
+            }
+
             function openDetailsModal() {
                 if(state.selectedTypes.length === 0) { showToast('Please select at least one document.','warning'); return; }
                 openModal('detailsModal');
                 buildModalForms();
                 setTimeout(() => { if(state.activeTab) switchTab(state.activeTab); }, 100);
+                document.getElementById('detailsBackBtn').addEventListener('click', () => {
+                    saveFormDataFromModal();
+                    closeModal('detailsModal');
+                });
+                document.querySelectorAll('.doc-tab').forEach(tab => {
+                    tab.addEventListener('click', saveFormDataFromModal);
+                });
             }
 
-            // ================================================================
-            //  HELPER: Load PDF.js from CDN on demand
-            // ================================================================
+            // ============================================================
+            // PREVIEW (PDF.js on mobile)
+            // ============================================================
             function loadPDFJS() {
                 return new Promise(function(resolve, reject) {
                     if (window.pdfjsLib) { resolve(); return; }
@@ -979,17 +1041,15 @@
                 });
             }
 
-            // ================================================================
-            //  PREVIEW — Inline PDF rendering with PDF.js on mobile (fixed DPR)
-            // ================================================================
             async function handlePreview() {
                 if(!state.activeTab) { showToast('Select a document tab first.','warning'); return; }
+                saveFormDataFromModal();
                 if(!validateForm(state.activeTab)) { showToast('Please fill all required fields.','warning'); return; }
                 const formData = getFormDataForType(state.activeTab);
                 openModal('previewModal');
                 $('#previewModalTitle span').textContent = 'Preview: ' + FORM_TYPES[state.activeTab].label;
                 $('#previewContent').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:400px;"><span class="spinner" style="width:40px;height:40px;border-width:3px;"></span><span style="margin-left:16px;color:var(--text-secondary);">Generating preview...</span></div>';
-                
+
                 let url = null;
                 try {
                     const resp = await fetch('/preview/' + state.activeTab, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(formData) });
@@ -997,7 +1057,7 @@
                     const blob = await resp.blob();
                     url = URL.createObjectURL(blob);
                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    
+
                     if (isMobile) {
                         await loadPDFJS();
                         const arrayBuffer = await new Promise(function(resolve, reject) {
@@ -1010,20 +1070,20 @@
                         const pdf = await pdfjsLib.getDocument({data: uint8Array}).promise;
                         const container = document.createElement('div');
                         container.className = 'pdf-canvas-container';
-                        
+
                         const dpr = window.devicePixelRatio || 1;
                         const maxDisplayWidth = Math.min(window.innerWidth - 64, 800);
-                        
+
                         for (let i = 1; i <= pdf.numPages; i++) {
                             const page = await pdf.getPage(i);
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d');
-                            
+
                             const baseViewport = page.getViewport({scale: 1});
                             const baseScale = maxDisplayWidth / baseViewport.width;
                             const dprFactor = Math.min(dpr, 2.5);
                             const finalScale = Math.min(baseScale * dprFactor, 3.5);
-                            
+
                             const viewport = page.getViewport({scale: finalScale});
                             canvas.width = viewport.width;
                             canvas.height = viewport.height;
@@ -1074,13 +1134,27 @@
                 if (blocker) blocker.classList.remove('active');
             }
 
-            // ================================================================
-            //  PAYMENT FLOW
-            // ================================================================
-            function handlePayClick() { let allValid = true; state.selectedTypes.forEach(t => { if(!validateForm(t)) allValid = false; }); if(!allValid) { showToast('Please fill all required fields.','warning'); return; } openPhoneModal(); }
-            function openPhoneModal() { $('#phoneInput').value = ''; $('#phoneInput').classList.remove('error'); $('#phoneError').classList.remove('show'); openModal('phoneModal'); setTimeout(() => $('#phoneInput').focus(), 300); }
+            // ============================================================
+            // PAYMENT FLOW (using button click, not form submit)
+            // ============================================================
+            function handlePayClick() {
+                saveFormDataFromModal();
+                let allValid = true;
+                state.selectedTypes.forEach(t => { if(!validateForm(t)) allValid = false; });
+                if(!allValid) { showToast('Please fill all required fields.','warning'); return; }
+                openPhoneModal();
+            }
+            function openPhoneModal() {
+                $('#phoneInput').value = '';
+                $('#phoneInput').classList.remove('error');
+                $('#phoneError').classList.remove('show');
+                openModal('phoneModal');
+                setTimeout(() => $('#phoneInput').focus(), 300);
+            }
+
+            // Phone submit handler – attached to click of #phoneSubmitBtn
             async function handlePhoneSubmit(e) {
-                e.preventDefault();
+                e.preventDefault(); // safe
                 const phone = $('#phoneInput').value.trim();
                 if(!validatePhone(phone)) {
                     $('#phoneInput').classList.add('error');
@@ -1099,7 +1173,6 @@
                 const formDataMap = {};
                 state.selectedTypes.forEach(t => { formDataMap[t] = getFormDataForType(t); });
 
-                // Get referral code from input
                 const referralCode = document.getElementById('referralCodeInput')?.value.trim() || '';
 
                 openModal('processingModal');
@@ -1120,7 +1193,8 @@
                     if(data.success && data.bundle_id) {
                         state.bundleId = data.bundle_id;
                         state.checkoutRequestId = data.checkout_request_id;
-                        setTimeout(() => pollPaymentStatus(data.bundle_id, data.checkout_request_id), 2000);
+                        savePaymentState(data.bundle_id, data.checkout_request_id);
+                        pollPaymentStatus(data.bundle_id, data.checkout_request_id);
                     }
                     else {
                         closeModal('processingModal');
@@ -1139,14 +1213,24 @@
                     try {
                         const resp = await fetch(`/api/payment_status/${bundleId}`); const data = await resp.json();
                         if(data.status==='success') { handleSuccess(bundleId, data.transaction_code); return; }
-                        if(state.paymentAttempts >= 20) { const checkResp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: checkoutRequestId}) }); const checkData = await checkResp.json(); if(checkData.status==='success') { handleSuccess(bundleId, checkData.transaction_code); return; } }
-                        if(state.paymentAttempts >= 40) { clearInterval(state.paymentInterval); closeModal('processingModal'); openModal('manualVerifyModal'); return; }
+                        if(state.paymentAttempts >= 20) {
+                            const checkResp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: checkoutRequestId}) });
+                            const checkData = await checkResp.json();
+                            if(checkData.status==='success') { handleSuccess(bundleId, checkData.transaction_code); return; }
+                        }
+                        if(state.paymentAttempts >= 40) {
+                            clearInterval(state.paymentInterval);
+                            closeModal('processingModal');
+                            openModal('manualVerifyModal');
+                            return;
+                        }
                     } catch(e) {}
-                }, 3000);
+                }, 2000);
             }
 
             function handleSuccess(bundleId, txCode) {
                 if(state.paymentInterval) { clearInterval(state.paymentInterval); state.paymentInterval = null; }
+                clearPaymentState();
                 state.transactionCode = txCode || 'N/A'; closeModal('processingModal');
                 const studentName = getStudentDetails().student_name || 'Student';
                 $('#successStudentName').textContent = studentName; $('#successBundleId').textContent = bundleId; $('#successTxCode').textContent = txCode || 'N/A';
@@ -1155,31 +1239,82 @@
                 $('#successDocList').innerHTML = docHtml; openModal('successModal'); showToast('Payment confirmed!','success');
             }
 
-            function cancelPayment() { if(state.paymentInterval) { clearInterval(state.paymentInterval); state.paymentInterval = null; } closeModal('processingModal'); showToast('Payment cancelled.','warning'); }
+            function cancelPayment() {
+                if(state.paymentInterval) { clearInterval(state.paymentInterval); state.paymentInterval = null; }
+                clearPaymentState();
+                closeModal('processingModal');
+                showToast('Payment cancelled.','warning');
+            }
 
-            async function manualVerify() { if(!state.checkoutRequestId) { showToast('No payment reference.','error'); return; } closeModal('manualVerifyModal'); openModal('processingModal'); $('#manualCheckHint').style.display = 'block'; try { const resp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: state.checkoutRequestId}) }); const data = await resp.json(); if(data.status==='success') { handleSuccess(state.bundleId || data.bundle_id, data.transaction_code); } else { closeModal('processingModal'); showToast('Payment still not confirmed.','warning'); } } catch(e) { closeModal('processingModal'); showToast('Network error.','error'); } }
-            function manualVerifyEmail() { closeModal('manualVerifyModal'); document.getElementById('retrieve').scrollIntoView({behavior:'smooth'}); $('#retrieveEmail').focus(); }
+            async function manualVerify() {
+                if(!state.checkoutRequestId) { showToast('No payment reference.','error'); return; }
+                closeModal('manualVerifyModal');
+                openModal('processingModal');
+                $('#manualCheckHint').style.display = 'block';
+                try {
+                    const resp = await fetch('/check_payment_status', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({checkout_request_id: state.checkoutRequestId}) });
+                    const data = await resp.json();
+                    if(data.status==='success') {
+                        handleSuccess(state.bundleId || data.bundle_id, data.transaction_code);
+                    } else {
+                        closeModal('processingModal');
+                        showToast('Payment still not confirmed.','warning');
+                    }
+                } catch(e) {
+                    closeModal('processingModal');
+                    showToast('Network error.','error');
+                }
+            }
+            function manualVerifyEmail() {
+                closeModal('manualVerifyModal');
+                document.getElementById('retrieve').scrollIntoView({behavior:'smooth'});
+                $('#retrieveEmail').focus();
+            }
 
-            // ================================================================
-            //  RETRIEVE
-            // ================================================================
+            // ============================================================
+            // RETRIEVE
+            // ============================================================
             async function handleRetrieve(e) {
-                e.preventDefault(); const email = $('#retrieveEmail').value.trim();
-                if(!validateEmail(email)) { $('#retrieveEmail').classList.add('error'); $('#retrieveError').classList.add('show'); return; }
-                $('#retrieveEmail').classList.remove('error'); $('#retrieveError').classList.remove('show');
-                const btn = $('#retrieveBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Searching...';
+                e.preventDefault();
+                const email = $('#retrieveEmail').value.trim();
+                if(!validateEmail(email)) {
+                    $('#retrieveEmail').classList.add('error');
+                    $('#retrieveError').classList.add('show');
+                    return;
+                }
+                $('#retrieveEmail').classList.remove('error');
+                $('#retrieveError').classList.remove('show');
+                const btn = $('#retrieveBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Searching...';
                 try {
                     const resp = await fetch('/retrieve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({identifier: email}) });
                     const data = await resp.json();
-                    if(resp.ok && data.bundle_id) { $('#retrieveDocName').textContent = data.student_name || 'Document Bundle'; $('#retrieveDocId').textContent = `Bundle ID: ${data.bundle_id}`; let linksHtml = ''; if(data.documents) { data.documents.forEach(doc => { const url = `/download_pdf/${data.bundle_id}/${doc.type}`; linksHtml += `<a href="${url}" class="btn btn-primary btn-sm" style="margin:4px 0;">⬇️ Download ${doc.name}</a>`; }); } $('#retrieveDocList').innerHTML = linksHtml; $('#retrieveResult').style.display = 'block'; showToast('Documents retrieved!','success'); }
+                    if(resp.ok && data.bundle_id) {
+                        $('#retrieveDocName').textContent = data.student_name || 'Document Bundle';
+                        $('#retrieveDocId').textContent = `Bundle ID: ${data.bundle_id}`;
+                        let linksHtml = '';
+                        if(data.documents) {
+                            data.documents.forEach(doc => {
+                                const url = `/download_pdf/${data.bundle_id}/${doc.type}`;
+                                linksHtml += `<a href="${url}" class="btn btn-primary btn-sm" style="margin:4px 0;">⬇️ Download ${doc.name}</a>`;
+                            });
+                        }
+                        $('#retrieveDocList').innerHTML = linksHtml;
+                        $('#retrieveResult').style.display = 'block';
+                        showToast('Documents retrieved!','success');
+                    }
                     else showToast(data.error || 'No documents found.','error');
-                } catch(e) { showToast('Network error.','error'); }
-                btn.disabled = false; btn.innerHTML = 'Retrieve Documents →';
+                } catch(e) {
+                    showToast('Network error.','error');
+                }
+                btn.disabled = false;
+                btn.innerHTML = 'Retrieve Documents →';
             }
 
-            // ================================================================
-            //  KEYBOARD SHORTCUT BLOCKER (Ctrl+S, Ctrl+P, F12, etc.)
-            // ================================================================
+            // ============================================================
+            // KEYBOARD SHORTCUT & CONTEXT MENU BLOCKERS
+            // ============================================================
             function blockKeyboardShortcuts(e) {
                 const previewModal = document.getElementById('previewModal');
                 const isPreviewActive = previewModal && previewModal.classList.contains('active');
@@ -1214,9 +1349,6 @@
                 return true;
             }
 
-            // ================================================================
-            //  CONTEXT MENU BLOCKER
-            // ================================================================
             function blockContextMenu(e) {
                 const previewModal = document.getElementById('previewModal');
                 const isPreviewActive = previewModal && previewModal.classList.contains('active');
@@ -1229,19 +1361,29 @@
                 return true;
             }
 
-            // ================================================================
-            //  INIT
-            // ================================================================
+            // ============================================================
+            // INIT
+            // ============================================================
             function init() {
-                // ---- Event listeners ----
+                // Load session state (selections and form data)
+                loadSessionState();
+
+                // Restore payment state if page was refreshed during payment
+                if (restorePaymentState()) {
+                    // payment modal is already open and polling started
+                }
+
+                // Event listeners
                 $('#navToggle').addEventListener('click', () => { const links=$('#navLinks'); const open=links.classList.toggle('open'); $('#navToggle').classList.toggle('active',open); });
                 document.querySelectorAll('.form-type-card').forEach(card => card.addEventListener('click', () => toggleDocument(card.dataset.type)));
-                $('#clearCartBtn').addEventListener('click', clearAll); $('#continueBtn').addEventListener('click', openDetailsModal);
+                $('#clearCartBtn').addEventListener('click', clearAll);
+                $('#continueBtn').addEventListener('click', openDetailsModal);
                 $('#detailsBackBtn').addEventListener('click', () => closeModal('detailsModal'));
                 $('#previewBtn').addEventListener('click', handlePreview);
                 $('#payBtn').addEventListener('click', handlePayClick);
 
-                $('#phoneForm').addEventListener('submit', handlePhoneSubmit);
+                // Phone modal – use click on button, not form submit
+                $('#phoneSubmitBtn').addEventListener('click', handlePhoneSubmit);
                 $('#phoneModalClose').addEventListener('click', () => closeModal('phoneModal'));
                 $('#phoneModalCancel').addEventListener('click', () => closeModal('phoneModal'));
 
@@ -1296,7 +1438,6 @@
                 const revealObserver = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
                 document.querySelectorAll('.reveal, .stagger').forEach(el => revealObserver.observe(el));
 
-                // Auto-fill referral code from URL parameter 'ref'
                 const urlParams = new URLSearchParams(window.location.search);
                 const refCode = urlParams.get('ref');
                 if (refCode) {

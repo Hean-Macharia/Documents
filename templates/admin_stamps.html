@@ -1,0 +1,301 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Manage Stamps{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">📜 Manage Stamps</h1>
+
+<!-- Upload Stamp -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h2>Upload Stamp</h2>
+        <span class="sub">Upload official stamp images (PNG with transparency recommended)</span>
+    </div>
+    
+    <form id="stampUploadForm" enctype="multipart/form-data" style="display: grid; gap: 1rem;">
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">Stamp Type</label>
+            <select name="stamp_type" id="stampType" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg);" required>
+                <option value="hospital_stamp">🏥 Hospital Stamp</option>
+                <option value="commissioner_stamp">⚖️ Commissioner Stamp</option>
+                <option value="sponsor_stamp">🤝 Sponsor Stamp</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">Stamp Image</label>
+            <input type="file" name="stamp_image" id="stampImage" accept="image/png,image/jpeg,image/gif,image/webp" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg);" required>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">📤 Upload Stamp</button>
+            <button type="reset" class="btn btn-secondary">🔄 Reset</button>
+        </div>
+    </form>
+</div>
+
+<!-- Current Stamps -->
+<div class="card">
+    <div class="card-header">
+        <h2>Current Stamps</h2>
+        <span class="sub">Stamps currently available for document generation</span>
+    </div>
+    
+    <div id="stampList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <p style="color: var(--text-secondary); grid-column: 1 / -1;">Loading stamps...</p>
+    </div>
+</div>
+
+<!-- Stamp Positions -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>📍 Stamp Positions</h2>
+        <span class="sub">Where stamps appear on each document type</span>
+    </div>
+    
+    <div id="stampPositions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <!-- Will be populated by JavaScript -->
+    </div>
+</div>
+
+<style>
+    .stamp-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        text-align: center;
+        background: var(--bg-light);
+    }
+    .stamp-card img {
+        max-width: 150px;
+        max-height: 150px;
+        border-radius: var(--radius-sm);
+        margin-bottom: 0.5rem;
+    }
+    .stamp-card .stamp-name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .stamp-card .stamp-status {
+        font-size: 0.85rem;
+        color: #10B981;
+    }
+    .stamp-card .stamp-actions {
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    .position-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 0.75rem;
+        background: var(--bg-light);
+    }
+    .position-card h4 {
+        margin: 0 0 0.25rem 0;
+        color: var(--text-primary);
+    }
+    .position-card .pos-detail {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0.1rem 0;
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load stamps using the API endpoint
+    async function loadStamps() {
+        try {
+            const response = await fetch('/admin/api/stamps');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const list = document.getElementById('stampList');
+            
+            if (!data || data.length === 0) {
+                list.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; border: 1px dashed var(--border); border-radius: var(--radius-md);">
+                        <p style="color: var(--text-secondary); font-size: 1.1rem;">📭 No stamps uploaded yet</p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Upload a stamp above or default text stamps will be used as fallback.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const stampLabels = {
+                'hospital_stamp': '🏥 Hospital Stamp',
+                'commissioner_stamp': '⚖️ Commissioner Stamp',
+                'sponsor_stamp': '🤝 Sponsor Stamp'
+            };
+            
+            let html = '';
+            data.forEach(stamp => {
+                html += `
+                    <div class="stamp-card">
+                        <img src="${stamp.path}" alt="${stamp.type}" 
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect width=%22150%22 height=%22150%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2214%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                        <div class="stamp-name">${stampLabels[stamp.type] || stamp.type}</div>
+                        <div class="stamp-status">✅ Available</div>
+                        <div class="stamp-actions">
+                            <button class="btn btn-danger btn-sm" onclick="deleteStamp('${stamp.type}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        } catch (e) {
+            console.error('Failed to load stamps:', e);
+            document.getElementById('stampList').innerHTML = `
+                <div style="grid-column: 1 / -1; color: #EF4444; padding: 1.5rem; text-align: center; border: 2px solid #EF4444; border-radius: var(--radius-md); background: #FEF2F2;">
+                    <strong style="font-size: 1.1rem;">❌ Failed to load stamps</strong>
+                    <br><small>${e.message}</small>
+                    <br><br>
+                    <button onclick="loadStamps()" class="btn btn-primary btn-sm">🔄 Retry</button>
+                </div>
+            `;
+            showToast('Failed to load stamps: ' + e.message, 'error');
+        }
+    }
+
+    // Load stamp positions
+    async function loadStampPositions() {
+        try {
+            const positions = {{ stamp_positions|tojson|safe }};
+            const container = document.getElementById('stampPositions');
+            
+            const docLabels = {
+                'medical': 'Medical Form',
+                'sponsorship': 'Sponsorship Letter',
+                'single_parent': 'Single Parent Certification'
+            };
+            
+            const stampLabels = {
+                'hospital_stamp': '🏥 Hospital',
+                'commissioner_stamp': '⚖️ Commissioner',
+                'sponsor_stamp': '🤝 Sponsor'
+            };
+            
+            let html = '';
+            for (const [docType, stamps] of Object.entries(positions)) {
+                html += `
+                    <div class="position-card">
+                        <h4>${docLabels[docType] || docType}</h4>
+                `;
+                for (const [stampType, pos] of Object.entries(stamps)) {
+                    html += `
+                        <div class="pos-detail">${stampLabels[stampType] || stampType}: X=${pos.x}, Y=${pos.y}, ${pos.width}x${pos.height}</div>
+                    `;
+                }
+                html += `</div>`;
+            }
+            
+            container.innerHTML = html;
+        } catch (e) {
+            console.error('Failed to load stamp positions', e);
+        }
+    }
+
+    // Delete stamp
+    async function deleteStamp(stampType) {
+        if (!confirm(`Are you sure you want to delete the ${stampType} stamp?`)) return;
+        
+        try {
+            const response = await fetch(`/admin/stamps/delete/${stampType}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Stamp deleted successfully!', 'success');
+                loadStamps();
+            } else {
+                showToast(data.error || 'Failed to delete stamp.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error: ' + e.message, 'error');
+        }
+    }
+
+    // Handle stamp upload
+    document.getElementById('stampUploadForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = '⏳ Uploading...';
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/admin/stamps', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message || 'Stamp uploaded successfully!', 'success');
+                this.reset();
+                loadStamps();
+            } else {
+                showToast(data.error || 'Failed to upload stamp.', 'error');
+            }
+        } catch (e) {
+            showToast('Network error: ' + e.message, 'error');
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Load everything on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStamps();
+        loadStampPositions();
+    });
+
+    // Toast helper
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const colors = {
+            success: '#10B981',
+            error: '#EF4444',
+            warning: '#F59E0B',
+            info: '#3B82F6'
+        };
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${colors[type] || '#333'};
+            color: white;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            z-index: 99999;
+            max-width: 450px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        `;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0 4px; opacity: 0.7;">&times;</button>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

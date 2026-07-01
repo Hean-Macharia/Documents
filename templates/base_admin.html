@@ -239,6 +239,28 @@
             .navbar .nav-links { gap: 0.75rem; flex-wrap: wrap; }
             .navbar .logout-btn { font-size: 0.7rem; padding: 0.3rem 0.75rem; }
         }
+        :root {
+    --bg: #f8fafc;
+    --bg-light: #f1f5f9;
+    --card-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
 
         /* ===== TOAST (for AJAX flash) ===== */
         .toast-container {

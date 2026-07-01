@@ -3,20 +3,136 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">Dashboard</h1>
+<h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem;">📊 Dashboard</h1>
 
 <!-- Stats Cards -->
 <div class="stats-grid" id="statsGrid">
-    <div class="stat-card"><div class="number" id="statTotal">—</div><div class="label">Total Bundles</div></div>
-    <div class="stat-card"><div class="number" id="statPaid">—</div><div class="label">Paid</div></div>
-    <div class="stat-card pending"><div class="number" id="statPending">—</div><div class="label">Pending</div></div>
-    <div class="stat-card revenue"><div class="number" id="statRevenue">—</div><div class="label">Revenue (KES)</div></div>
+    <div class="stat-card">
+        <div class="number" id="statTotal">—</div>
+        <div class="label">Total Bundles</div>
+    </div>
+    <div class="stat-card">
+        <div class="number" id="statPaid">—</div>
+        <div class="label">Paid</div>
+    </div>
+    <div class="stat-card pending">
+        <div class="number" id="statPending">—</div>
+        <div class="label">Pending</div>
+    </div>
+    <div class="stat-card revenue">
+        <div class="number" id="statRevenue">—</div>
+        <div class="label">Revenue (KES)</div>
+    </div>
 </div>
 
 <!-- Quick actions -->
-<div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+<div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
     <a href="{{ url_for('admin_settings_route') }}" class="btn btn-primary">⚙️ Edit Settings</a>
+    <a href="{{ url_for('admin_stamps') }}" class="btn btn-primary">📜 Manage Stamps</a>
+    <a href="{{ url_for('admin_referral_codes') }}" class="btn btn-primary">🔗 Referral Codes</a>
     <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">🚪 Logout</a>
+</div>
+
+<!-- ===== DOCUMENT PREVIEW SECTION ===== -->
+<div class="card" style="margin-top: 0;">
+    <div class="card-header">
+        <h2>📄 Document Preview Generator</h2>
+        <span class="sub">Preview dully filled documents with stamps</span>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">Document Type</label>
+            <select id="previewDocType" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg);">
+                <option value="medical">🏥 Medical Form</option>
+                <option value="sponsorship">🤝 Sponsorship Letter</option>
+                <option value="single_parent">👨‍👧 Single Parent Certification</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-primary);">Preview Mode</label>
+            <select id="previewMode" style="width: 100%; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg);">
+                <option value="unstamped">📄 Unstamped (Preview)</option>
+                <option value="stamped">📜 Stamped (Final)</option>
+            </select>
+        </div>
+    </div>
+    
+    <button class="btn btn-primary" id="generatePreviewBtn" style="margin-bottom: 1rem;">
+        🔍 Generate Preview
+    </button>
+    
+    <div id="previewContainer" style="display: none; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; background: var(--bg-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <h3 style="margin: 0; color: var(--text-primary);">Document Preview</h3>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary btn-sm" id="downloadPreviewBtn">📥 Download PDF</button>
+                <button class="btn btn-secondary btn-sm" id="closePreviewBtn">✖ Close</button>
+            </div>
+        </div>
+        <iframe id="previewFrame" style="width: 100%; height: 600px; border: none; border-radius: var(--radius-sm); background: white;"></iframe>
+        <div style="margin-top: 0.5rem;">
+            <span id="previewStatus" style="color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center;"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SAMPLE DATA ===== -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h2>📝 Sample Data</h2>
+        <span class="sub">Fill sample data for preview (all fields optional)</span>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Student Name</label>
+            <input type="text" id="sampleStudentName" value="John Mwangi Kamau" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">National ID</label>
+            <input type="text" id="sampleNationalId" value="12345678" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">University/College</label>
+            <input type="text" id="sampleUniversity" value="University of Nairobi" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">KCSE Index</label>
+            <input type="text" id="sampleKcse" value="1234567890" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Admission Number</label>
+            <input type="text" id="sampleAdmission" value="ADM2024001" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Telephone</label>
+            <input type="text" id="samplePhone" value="0712345678" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Email</label>
+            <input type="email" id="sampleEmail" value="john.kamau@example.com" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Sponsored Level</label>
+            <select id="sampleLevel" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+                <option value="Primary">Primary</option>
+                <option value="Secondary">Secondary</option>
+                <option value="College" selected>College</option>
+            </select>
+        </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Sponsorship Covered</label>
+            <input type="text" id="sampleCovered" value="Tuition, Accommodation, Books" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+        <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">Completed Duration</label>
+            <input type="text" id="sampleDuration" value="4 years" style="width: 100%; padding: 0.4rem; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+        </div>
+    </div>
 </div>
 
 <!-- ===== REFERRAL CODES MANAGEMENT ===== -->
@@ -31,8 +147,8 @@
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <input type="text" id="newCode" placeholder="Code (e.g., MARKET123)" style="flex: 1; min-width: 150px; padding: 0.4rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-md);" />
             <input type="text" id="newMarketer" placeholder="Marketer Name" style="flex: 1; min-width: 150px; padding: 0.4rem 0.6rem; border: 1.5px solid var(--border); border-radius: var(--radius-md);" />
-            <button class="btn btn-primary btn-sm" id="saveCodeBtn">Save</button>
-            <button class="btn btn-secondary btn-sm" id="cancelCodeBtn">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="saveCodeBtn">✅ Save</button>
+            <button class="btn btn-secondary btn-sm" id="cancelCodeBtn">❌ Cancel</button>
         </div>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Discount per document: <strong>KES {{ referral_discount or 50 }}</strong> (set via environment variable)</p>
     </div>
@@ -43,36 +159,215 @@
     </div>
 </div>
 
-<!-- Optional: Recent forms (you can expand later) -->
+<!-- Recent Documents -->
 <div class="card" style="margin-top: 1.5rem;">
     <div class="card-header">
         <h2>📄 Recent Documents</h2>
-        <span class="sub">Latest submissions</span>
+        <span class="sub">Latest submissions (last 10)</span>
     </div>
-    <p style="color: #64748b; font-size: 0.95rem;">Visit the <a href="{{ url_for('admin_get_forms') }}" style="color: #10b981;">/admin/get_forms</a> endpoint to see all records (JSON).</p>
+    <div id="recentDocumentsList">
+        <p style="color: var(--text-secondary);">Loading recent documents...</p>
+    </div>
 </div>
 
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .stat-card .number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .stat-card .label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+    
+    .stat-card.pending .number {
+        color: #F59E0B;
+    }
+    
+    .stat-card.revenue .number {
+        color: #10B981;
+    }
+    
+    .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        margin-bottom: 0;
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .card-header h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .card-header .sub {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.9rem;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+    
+    .btn-primary {
+        background: #10B981;
+        color: white;
+    }
+    
+    .btn-danger {
+        background: #EF4444;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: var(--border);
+        color: var(--text-secondary);
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    table th {
+        text-align: left;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid var(--border);
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    table td {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-primary);
+    }
+    
+    table tr:hover td {
+        background: var(--bg-light);
+    }
+    
+    code {
+        background: var(--bg);
+        padding: 0.1rem 0.4rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        color: var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Helper toast (same as base_admin)
+    // Helper toast notification
     function showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <span class="message">${message}</span>
-            <button class="close" onclick="this.parentElement.remove()">&times;</button>
+        toast.className = 'custom-toast';
+        const colors = {
+            success: '#10B981',
+            error: '#EF4444',
+            warning: '#F59E0B',
+            info: '#3B82F6'
+        };
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${colors[type] || '#333'};
+            color: white;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            z-index: 99999;
+            max-width: 450px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255,255,255,0.1);
         `;
-        container.appendChild(toast);
-        setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; padding: 0 4px; opacity: 0.7;">&times;</button>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentElement) toast.remove();
+        }, 5000);
     }
 
     // Load stats
     async function loadStats() {
         try {
             const response = await fetch('/admin/get_stats');
+            if (!response.ok) throw new Error('Failed to load stats');
             const data = await response.json();
             document.getElementById('statTotal').textContent = data.total_bundles ?? '0';
             document.getElementById('statPaid').textContent = data.paid_bundles ?? '0';
@@ -88,25 +383,22 @@
     async function loadReferralCodes() {
         try {
             const resp = await fetch('/admin/referral_codes');
+            if (!resp.ok) throw new Error('Failed to load referral codes');
             const data = await resp.json();
             const list = document.getElementById('referralCodesList');
             if (!data || data.length === 0) {
                 list.innerHTML = '<p style="color: var(--text-secondary);">No referral codes yet. Create one above.</p>';
                 return;
             }
-            let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
-            html += `<thead><tr>
-                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Code</th>
-                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Marketer</th>
-                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Discount</th>
-                <th style="text-align:left; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">Status</th>
-            </tr></thead><tbody>`;
+            let html = '<table><thead><tr>';
+            html += '<th>Code</th><th>Marketer</th><th>Discount</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
             data.forEach(c => {
                 html += `<tr>
-                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);"><code>${c.code}</code></td>
-                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">${c.marketer_name}</td>
-                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">KES ${c.discount_per_doc || 50}</td>
-                    <td style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">${c.active ? '✅ Active' : '❌ Inactive'}</td>
+                    <td><code>${c.code}</code></td>
+                    <td>${c.marketer_name}</td>
+                    <td>KES ${c.discount_per_doc || 50}</td>
+                    <td>${c.active ? '✅ Active' : '❌ Inactive'}</td>
                 </tr>`;
             });
             html += '</tbody></table>';
@@ -114,6 +406,129 @@
         } catch(e) {
             document.getElementById('referralCodesList').innerHTML = '<p style="color: #EF4444;">Failed to load codes.</p>';
             showToast('Failed to load referral codes.', 'error');
+        }
+    }
+
+    // Load recent documents
+    async function loadRecentDocuments() {
+        try {
+            const response = await fetch('/admin/get_forms');
+            if (!response.ok) throw new Error('Failed to load documents');
+            const data = await response.json();
+            const list = document.getElementById('recentDocumentsList');
+            
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p style="color: var(--text-secondary);">No documents submitted yet.</p>';
+                return;
+            }
+            
+            const recent = data.slice(0, 10);
+            let html = '<table><thead><tr>';
+            html += '<th>Bundle ID</th><th>Student</th><th>Documents</th><th>Status</th><th>Amount</th><th>Date</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            recent.forEach(doc => {
+                const statusColor = doc.payment_status === 'success' ? '#10B981' : 
+                                   doc.payment_status === 'failed' ? '#EF4444' : '#F59E0B';
+                html += `<tr>
+                    <td><code>${doc.bundle_id}</code></td>
+                    <td>${doc.student_details?.student_name || 'N/A'}</td>
+                    <td>${doc.documents || doc.form_types?.join(', ') || 'N/A'}</td>
+                    <td><span style="color: ${statusColor}; font-weight: 600;">${doc.payment_status}</span></td>
+                    <td>KES ${doc.total_amount || 0}</td>
+                    <td>${doc.created_at || 'N/A'}</td>
+                    <td>
+                        ${doc.payment_status === 'success' ? 
+                            `<a href="/download_all/${doc.bundle_id}" class="btn btn-primary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">📥 Download</a>` : 
+                            '—'}
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            if (data.length > 10) {
+                html += `<p style="color: var(--text-secondary); margin-top: 0.5rem;">Showing 10 of ${data.length} documents.</p>`;
+            }
+            list.innerHTML = html;
+        } catch (e) {
+            document.getElementById('recentDocumentsList').innerHTML = '<p style="color: #EF4444;">Failed to load recent documents.</p>';
+            console.error('Failed to load recent documents', e);
+        }
+    }
+
+    // Generate document preview - UPDATED with separate stamped route
+    async function generatePreview() {
+        const docType = document.getElementById('previewDocType').value;
+        const mode = document.getElementById('previewMode').value;
+        const isStamped = mode === 'stamped';
+        
+        // Collect sample data
+        const formData = {
+            student_name: document.getElementById('sampleStudentName').value || 'John Mwangi Kamau',
+            national_id: document.getElementById('sampleNationalId').value || '12345678',
+            university: document.getElementById('sampleUniversity').value || 'University of Nairobi',
+            kcse_index: document.getElementById('sampleKcse').value || '1234567890',
+            admission_number: document.getElementById('sampleAdmission').value || 'ADM2024001',
+            telephone: document.getElementById('samplePhone').value || '0712345678',
+            email: document.getElementById('sampleEmail').value || 'john.kamau@example.com',
+            sponsored_level: document.getElementById('sampleLevel').value || 'College',
+            sponsorship_covered: document.getElementById('sampleCovered').value || 'Tuition, Accommodation, Books',
+            completed_duration: document.getElementById('sampleDuration').value || '4 years',
+            relationship: 'Mother',
+            marital_status: 'Single',
+            parent_name: 'Mary Mwangi',
+            parent_id: '87654321',
+            parent_telephone: '0723456789'
+        };
+        
+        // Choose the appropriate endpoint based on mode
+        const endpoint = isStamped ? `/preview_stamped/${docType}` : `/preview/${docType}`;
+        
+        const statusEl = document.getElementById('previewStatus');
+        statusEl.textContent = `⏳ Generating ${isStamped ? 'stamped' : 'unstamped'} preview...`;
+        statusEl.style.color = '#F59E0B';
+        
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            const container = document.getElementById('previewContainer');
+            container.style.display = 'block';
+            
+            const frame = document.getElementById('previewFrame');
+            frame.src = url;
+            
+            const downloadBtn = document.getElementById('downloadPreviewBtn');
+            downloadBtn.onclick = function() {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${docType}_${mode}_${Date.now()}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            
+            statusEl.textContent = `✅ Preview ready (${mode})`;
+            statusEl.style.color = '#10B981';
+            
+            showToast(`Preview generated successfully (${mode})`, 'success');
+        } catch (error) {
+            console.error('Preview generation error:', error);
+            statusEl.textContent = '❌ Failed to generate preview: ' + error.message;
+            statusEl.style.color = '#EF4444';
+            showToast('Failed to generate preview: ' + error.message, 'error');
         }
     }
 
@@ -127,6 +542,14 @@
         document.getElementById('newCodeForm').style.display = 'none';
         document.getElementById('newCode').value = '';
         document.getElementById('newMarketer').value = '';
+    });
+
+    // Close preview
+    document.getElementById('closePreviewBtn')?.addEventListener('click', function() {
+        document.getElementById('previewContainer').style.display = 'none';
+        const frame = document.getElementById('previewFrame');
+        frame.src = '';
+        document.getElementById('previewStatus').textContent = '';
     });
 
     // Save new referral code
@@ -149,7 +572,7 @@
                 document.getElementById('newCodeForm').style.display = 'none';
                 document.getElementById('newCode').value = '';
                 document.getElementById('newMarketer').value = '';
-                loadReferralCodes(); // refresh list
+                loadReferralCodes();
             } else {
                 showToast(data.error || 'Failed to create code.', 'error');
             }
@@ -158,13 +581,18 @@
         }
     });
 
+    // Generate preview button
+    document.getElementById('generatePreviewBtn')?.addEventListener('click', generatePreview);
+
     // Load everything on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadStats();
         loadReferralCodes();
+        loadRecentDocuments();
     });
 
     // Refresh stats every 30 seconds
     setInterval(loadStats, 30000);
+    setInterval(loadRecentDocuments, 60000);
 </script>
 {% endblock %}
