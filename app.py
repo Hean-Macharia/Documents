@@ -2429,8 +2429,10 @@ def create_app() -> Flask:
 # ENTRY POINT
 # ============================================================================
 
+# Create the Flask application instance (available for Gunicorn)
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
     cfg = Config.load()
     if cfg.is_production:
         print("WARNING: Do not use app.run() in production. Use Gunicorn with gevent workers.")
