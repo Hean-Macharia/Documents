@@ -60,9 +60,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ============================================================================
-# TEST MODE
+# PRODUCTION CONFIGURATION
 # ============================================================================
-TEST_MODE = False  # Set to True for testing without real M-Pesa
+
+# Detect if running on Render
+IS_RENDER = os.getenv("RENDER", "").lower() == "true"
+
+# Set TEST_MODE based on environment (False in production)
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 # ============================================================================
 # CLOUDINARY CONFIGURATION
@@ -105,7 +110,6 @@ class CloudinaryStorage:
                     clean_url = "/".join(parts)
                     return clean_url
                 else:
-                    # Try without preset
                     result = cloudinary.uploader.upload(
                         io.BytesIO(pdf_bytes),
                         resource_type="raw",
@@ -128,7 +132,6 @@ class CloudinaryStorage:
                 print(f"[CLOUDINARY] Attempt {attempt + 1} failed: {e}")
                 time.sleep(1)
         
-        # Final fallback
         try:
             result = cloudinary.uploader.upload(
                 io.BytesIO(pdf_bytes),
@@ -169,7 +172,6 @@ PAGE_H = 792.0
 PAGE_W = 612.0
 TODAY = date.today().strftime("%d %B %Y")
 
-# FIXED: Correct prices
 DOCUMENT_PRICES = {
     "medical": 400,
     "sponsorship": 300,
@@ -244,9 +246,15 @@ class Config:
     @classmethod
     def load(cls) -> "Config":
         env = os.getenv("FLASK_ENV", "development").lower()
-        debug = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
-        if os.getenv("RENDER", "").lower() == "true":
+        
+        # Auto-detect Render environment
+        if IS_RENDER:
+            env = "production"
             debug = False
+            print("🚀 Running on Render - Production mode")
+        else:
+            debug = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
+        
         secret_key = os.getenv("SECRET_KEY", "").strip()
         if env == "production" and not secret_key:
             raise RuntimeError("CRITICAL: SECRET_KEY is required in production")
@@ -427,7 +435,7 @@ class DatabaseManager:
             self._db.documents.create_index("bundle_id", unique=True, background=True)
             self._db.documents.create_index("student_email", background=True)
             self._db.documents.create_index("payment_status", background=True)
-            self._db.documents.create_index("transaction_code", background=True)  # Not unique to avoid conflicts
+            self._db.documents.create_index("transaction_code", background=True)
             self._db.documents.create_index("checkout_request_id", background=True)
             self._db.documents.create_index("created_at", background=True)
             self._db.documents.create_index("document_status", background=True)
@@ -1327,18 +1335,21 @@ DEFAULT_ADMIN_SETTINGS = {
 }
 
 # ============================================================================
-# EMAIL TEMPLATE WITH BUTTONS
+# EMAIL TEMPLATE WITH DIRECT CLOUDINARY LINKS
 # ============================================================================
 
 def build_payment_confirmation_email_with_buttons(student_name, bundle_id, transaction_code, form_types, total_amount, pdf_urls):
+    """Build HTML email with direct Cloudinary download links"""
+    
     doc_buttons = ""
     for ft in form_types:
         display_name = FORM_TYPE_DISPLAY.get(ft, ft)
-        download_url = f"/download_pdf/{bundle_id}/{ft}"
+        cloudinary_url = pdf_urls.get(ft, "#")
+        
         doc_buttons += f'''
         <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #10B981;">
             <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 10px;">📄 {display_name}</div>
-            <a href="{download_url}" 
+            <a href="{cloudinary_url}" 
                style="display: inline-block; padding: 14px 35px; background: #10B981; color: white; 
                       text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;
                       border: none; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
@@ -1349,6 +1360,7 @@ def build_payment_confirmation_email_with_buttons(student_name, bundle_id, trans
             </span>
         </div>
         '''
+
     if len(form_types) > 1:
         all_download_url = f"/download_all/{bundle_id}"
         download_all = f'''
@@ -1367,7 +1379,7 @@ def build_payment_confirmation_email_with_buttons(student_name, bundle_id, trans
         '''
     else:
         download_all = ""
-    
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -1394,7 +1406,7 @@ def build_payment_confirmation_email_with_buttons(student_name, bundle_id, trans
             .content {{ padding: 20px; }}
             .header {{ padding: 20px; }}
             .header h1 {{ font-size: 22px; }}
-            .button-primary {{ display: block; text-align: center; margin: 10px 0; }}
+            .button-primary {{ display: block; text-align: center; margin: 10px 0; width: 100%; }}
         }}
     </style>
     </head>
@@ -1404,16 +1416,20 @@ def build_payment_confirmation_email_with_buttons(student_name, bundle_id, trans
             <h1>✅ Payment Confirmed!</h1>
             <p>Your Supporting Documents Are Ready</p>
         </div>
+        
         <div class="content">
             <h3>Dear {student_name},</h3>
             <p>We are pleased to confirm that your payment has been successfully processed. Your documents are ready for download.</p>
+            
             <div class="details">
                 <p><strong>🔑 Bundle ID:</strong> <span style="background: #e5e7eb; padding: 2px 10px; border-radius: 4px; font-family: monospace;">{bundle_id}</span></p>
                 <p><strong>📝 Transaction Code:</strong> <span style="background: #e5e7eb; padding: 2px 10px; border-radius: 4px; font-family: monospace;">{transaction_code}</span></p>
                 <p><strong>📅 Date:</strong> {datetime.now().strftime('%d %B %Y at %H:%M')}</p>
                 <p><strong>💰 Total Paid:</strong> <span style="color: #10B981; font-weight: bold; font-size: 18px;">KES {total_amount}</span></p>
             </div>
+            
             <div class="divider"></div>
+            
             <div class="doc-section">
                 <h4>📄 Your Documents</h4>
                 <p style="color: #6B7280; font-size: 14px; margin-bottom: 20px;">
@@ -1421,18 +1437,22 @@ def build_payment_confirmation_email_with_buttons(student_name, bundle_id, trans
                 </p>
                 {doc_buttons}
             </div>
+            
             {download_all}
+            
             <div style="margin-top: 25px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #F59E0B;">
                 <p style="margin: 0; font-size: 14px; color: #92400E;">
                     💡 <strong>Tip:</strong> If the document opens in your browser, look for the save/download icon 
                     (usually a floppy disk or downward arrow) to save it to your device.
                 </p>
             </div>
+            
             <p style="margin-top: 30px; font-size: 15px;">
                 Thank you for using our service.<br>
                 <strong style="color: #10B981;">Supporting Documents Team</strong>
             </p>
         </div>
+        
         <div class="footer">
             <p>This is an automated message. Please do not reply to this email.</p>
             <p>&copy; 2026 Supporting Documents. All rights reserved.</p>
@@ -1774,12 +1794,11 @@ def create_app() -> Flask:
             log.info(f"[POLL] {bundle_id} still pending after max attempts. Waiting for callback.")
 
     def _generate_multiple_pdfs_and_send_email(bundle_id, form_types, form_data_map, student_email, student_name, tx_code):
-        """Generate PDFs, upload to Cloudinary, send email - NO base64 storage"""
+        """Generate PDFs, upload to Cloudinary, send email with direct Cloudinary links"""
         try:
             pdf_urls = {}
             total_amount = sum(DOCUMENT_PRICES.get(ft, cfg.payment_amount_per_doc) for ft in form_types)
             
-            # Update document status
             if use_mongo:
                 mongo_db.documents.update_one(
                     {"bundle_id": bundle_id},
@@ -1788,15 +1807,12 @@ def create_app() -> Flask:
             
             for ft in form_types:
                 pdf_bytes = _make_pdf(ft, form_data_map.get(ft, {}), stamped=True)
-                
-                # Upload to Cloudinary
                 url = storage.upload_pdf(pdf_bytes, bundle_id, ft)
                 if url:
                     pdf_urls[ft] = url
                     log.info(f"[CLOUDINARY] Uploaded {ft} for {bundle_id}: {url}")
                 else:
                     log.warning(f"[CLOUDINARY] Failed to upload {ft} for {bundle_id}")
-                    # Try one more time with direct upload
                     try:
                         result = cloudinary.uploader.upload(
                             io.BytesIO(pdf_bytes),
@@ -1820,7 +1836,6 @@ def create_app() -> Flask:
                     except Exception as e2:
                         log.error(f"[CLOUDINARY] Retry failed: {e2}")
             
-            # Store URLs in database
             if use_mongo and pdf_urls:
                 result = mongo_db.documents.update_one(
                     {"bundle_id": bundle_id},
@@ -1833,7 +1848,6 @@ def create_app() -> Flask:
             elif bundle_id in memory_storage:
                 memory_storage[bundle_id]["pdf_urls"] = pdf_urls
             
-            # Send email with CC (only if we have PDFs)
             if student_email and cfg.brevo_api_key and pdf_urls:
                 doc_names = [FORM_TYPE_DISPLAY.get(ft, ft) for ft in form_types]
                 subject = f"Your Documents ({', '.join(doc_names)}) - {bundle_id}"
@@ -1864,7 +1878,7 @@ def create_app() -> Flask:
                 else:
                     log.warning(f"[EMAIL] Failed: {message}")
             else:
-                log.warning(f"[EMAIL] Skipped for {bundle_id} - Missing email or PDFs")
+                log.warning(f"[EMAIL] Skipped for {bundle_id}")
                 
         except Exception as e:
             log.exception(f"[BACKGROUND] Task failed for {bundle_id}: {e}")
@@ -2007,7 +2021,6 @@ def create_app() -> Flask:
             log.error(f"Failed to create document record: {e}")
             return jsonify({"error": "Database error"}), 500
 
-        # TEST MODE
         if TEST_MODE:
             log.info(f"[TEST] Auto-confirming payment for {bundle_id}")
             if use_mongo:
@@ -2045,7 +2058,6 @@ def create_app() -> Flask:
                 "redirect_url": "/payment_status?bundle_id=" + bundle_id
             })
 
-        # Real M-Pesa
         success, result = mpesa.init_stk_push(formatted_phone, account_ref, f"{len(form_types)} Docs", total_amount)
         if success:
             checkout_request_id = result["checkout_request_id"]
@@ -2176,14 +2188,12 @@ def create_app() -> Flask:
 
     @app.route("/download_pdf/<bundle_id>/<form_type>", methods=["GET"])
     def download_single_pdf(bundle_id, form_type):
-        """Download PDF - ONLY from Cloudinary (no base64 fallback)"""
         record = get_user_document_by_bundle_id(bundle_id)
         if not record:
             return jsonify({"error": "Document not found"}), 404
         if record.get("payment_status") != PaymentStatus.SUCCESS.value:
             return jsonify({"error": "Payment not completed"}), 402
         
-        # Check Cloudinary URLs
         pdf_urls = record.get("pdf_urls", {})
         if form_type in pdf_urls:
             try:
@@ -2199,25 +2209,18 @@ def create_app() -> Flask:
             except Exception as e:
                 log.error(f"Cloudinary error: {e}")
         
-        # If Cloudinary fails, try to regenerate
         form_data_map = record.get("form_data_map", {})
         if form_type in form_data_map:
             try:
                 log.info(f"Regenerating PDF on the fly for {bundle_id}/{form_type}")
                 pdf_bytes = _make_pdf(form_type, form_data_map[form_type], stamped=True)
                 _, _, dl_name = BUILDERS.get(form_type, (None, None, "document.pdf"))
-                
-                # Re-upload to Cloudinary
                 url = storage.upload_pdf(pdf_bytes, bundle_id, form_type)
-                if url:
-                    if use_mongo:
-                        mongo_db.documents.update_one(
-                            {"bundle_id": bundle_id},
-                            {"$set": {f"pdf_urls.{form_type}": url}}
-                        )
-                    elif bundle_id in memory_storage:
-                        memory_storage[bundle_id]["pdf_urls"][form_type] = url
-                
+                if url and use_mongo:
+                    mongo_db.documents.update_one(
+                        {"bundle_id": bundle_id},
+                        {"$set": {f"pdf_urls.{form_type}": url}}
+                    )
                 return send_file(
                     io.BytesIO(pdf_bytes),
                     mimetype="application/pdf",
@@ -2247,8 +2250,6 @@ def create_app() -> Flask:
                         if response.status_code == 200:
                             _, _, dl_name = BUILDERS.get(ft, (None, None, f"{ft}.pdf"))
                             zf.writestr(dl_name, response.content)
-                        else:
-                            log.warning(f"Failed to fetch {ft}: {response.status_code}")
                     except Exception as e:
                         log.error(f"Error downloading {ft}: {e}")
             zip_buffer.seek(0)
@@ -2316,7 +2317,11 @@ def create_app() -> Flask:
         }
         for ft in form_types:
             doc = {"type": ft, "name": FORM_TYPE_DISPLAY.get(ft, ft)}
-            doc["download_url"] = f"/download_pdf/{record['bundle_id']}/{ft}"
+            if ft in pdf_urls:
+                doc["download_url"] = pdf_urls[ft]
+                doc["cloudinary"] = True
+            else:
+                doc["download_url"] = f"/download_pdf/{record['bundle_id']}/{ft}"
             response_data["documents"].append(doc)
         
         response_data["download_all_url"] = f"/download_all/{record['bundle_id']}"
@@ -2324,11 +2329,9 @@ def create_app() -> Flask:
 
     @app.route("/check_pdfs/<bundle_id>", methods=["GET"])
     def check_pdfs(bundle_id):
-        """Check if PDFs exist for a bundle"""
         record = get_user_document_by_bundle_id(bundle_id)
         if not record:
             return jsonify({"error": "Document not found"}), 404
-        
         pdf_urls = record.get("pdf_urls", {})
         return jsonify({
             "bundle_id": bundle_id,
@@ -2349,6 +2352,7 @@ def create_app() -> Flask:
             "mpesa": "configured" if (cfg.mpesa_consumer_key and cfg.mpesa_passkey) else "missing",
             "brevo": "configured" if cfg.brevo_api_key else "missing",
             "cloudinary": "configured" if (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY")) else "missing",
+            "environment": "production" if cfg.is_production else "development",
             "version": "3.0.0"
         }), 200 if db_ok and cache_ok else 503
 
@@ -2397,14 +2401,14 @@ def create_app() -> Flask:
     verify_assets()
 
     log.info("=" * 60)
-    log.info("SUPPORTING DOCUMENTS GENERATOR v3.0 — OPTIMIZED (NO BASE64)")
+    log.info("SUPPORTING DOCUMENTS GENERATOR v3.0 — PRODUCTION READY")
     log.info("=" * 60)
     log.info(f"Environment: {'PRODUCTION' if cfg.is_production else 'DEVELOPMENT'}")
     log.info(f"Database: {'MongoDB' if use_mongo else 'In-Memory'}")
     log.info(f"Test Mode: {'ON' if TEST_MODE else 'OFF'}")
     log.info(f"Cloudinary: {'CONFIGURED' if (os.getenv('CLOUDINARY_CLOUD_NAME') and os.getenv('CLOUDINARY_API_KEY')) else 'NOT CONFIGURED'}")
     log.info(f"Email CC: kuccpscourses@gmail.com")
-    log.info(f"Base64 Storage: DISABLED (Saving 900KB per user)")
+    log.info(f"Base64 Storage: DISABLED")
     log.info("=" * 60)
 
     return app
@@ -2418,5 +2422,33 @@ app = create_app()
 if __name__ == "__main__":
     cfg = Config.load()
     if cfg.is_production:
-        print("WARNING: Do not use app.run() in production. Use Gunicorn with gevent workers.")
-    app.run(debug=cfg.debug, host=cfg.host, port=cfg.port)
+        # In production, use gunicorn
+        from gunicorn.app.base import BaseApplication
+        
+        class FlaskApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+            
+            def load_config(self):
+                for key, value in self.options.items():
+                    if key in self.cfg.settings and value is not None:
+                        self.cfg.set(key, value)
+            
+            def load(self):
+                return self.application
+        
+        options = {
+            'bind': f"{cfg.host}:{cfg.port}",
+            'workers': 2,
+            'threads': 4,
+            'worker_class': 'gthread',
+            'max_requests': 100,
+            'timeout': 120,
+            'preload_app': True,
+        }
+        
+        FlaskApplication(app, options).run()
+    else:
+        app.run(debug=cfg.debug, host=cfg.host, port=cfg.port)
