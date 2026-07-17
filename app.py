@@ -42,6 +42,13 @@ from reportlab.lib.utils import ImageReader
 from PIL import Image, ImageDraw, ImageFont
 
 # ------------------------------------------------------------------------------
+# Cloudinary
+# ------------------------------------------------------------------------------
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# ------------------------------------------------------------------------------
 # HTTP / Environment
 # ------------------------------------------------------------------------------
 import requests
@@ -53,6 +60,96 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ============================================================================
+# TEST MODE
+# ============================================================================
+TEST_MODE = False  # Set to True for testing without real M-Pesa
+
+# ============================================================================
+# CLOUDINARY CONFIGURATION
+# ============================================================================
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
+
+class CloudinaryStorage:
+    @staticmethod
+    def upload_pdf(pdf_bytes, bundle_id, form_type, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                pdf_file = io.BytesIO(pdf_bytes)
+                result = cloudinary.uploader.upload(
+                    pdf_file,
+                    resource_type="raw",
+                    folder=f"supporting_docs/{bundle_id}",
+                    public_id=form_type,
+                    overwrite=True,
+                    use_filename=True,
+                    unique_filename=False,
+                    invalidate=True,
+                    access_mode="public",
+                    type="upload",
+                    format="pdf",
+                    upload_preset="ml_default"
+                )
+                url = result.get("secure_url")
+                if url:
+                    parts = url.split("/")
+                    for i, part in enumerate(parts):
+                        if part.startswith("v") and part[1:].isdigit():
+                            parts.pop(i)
+                            break
+                    clean_url = "/".join(parts)
+                    return clean_url
+                else:
+                    # Try without preset
+                    result = cloudinary.uploader.upload(
+                        io.BytesIO(pdf_bytes),
+                        resource_type="raw",
+                        folder=f"supporting_docs/{bundle_id}",
+                        public_id=form_type,
+                        overwrite=True,
+                        access_mode="public",
+                        type="upload",
+                        format="pdf"
+                    )
+                    url = result.get("secure_url")
+                    if url:
+                        parts = url.split("/")
+                        for i, part in enumerate(parts):
+                            if part.startswith("v") and part[1:].isdigit():
+                                parts.pop(i)
+                                break
+                        return "/".join(parts)
+            except Exception as e:
+                print(f"[CLOUDINARY] Attempt {attempt + 1} failed: {e}")
+                time.sleep(1)
+        
+        # Final fallback
+        try:
+            result = cloudinary.uploader.upload(
+                io.BytesIO(pdf_bytes),
+                resource_type="raw",
+                folder=f"supporting_docs/{bundle_id}",
+                public_id=form_type,
+                overwrite=True,
+                access_mode="public",
+                type="upload"
+            )
+            url = result.get("secure_url")
+            if url:
+                return url
+        except Exception as e:
+            print(f"[CLOUDINARY] Final fallback failed: {e}")
+        
+        return None
+
+storage = CloudinaryStorage()
+
+# ============================================================================
 # CONSTANTS & ENUMS
 # ============================================================================
 
@@ -61,15 +158,18 @@ class PaymentStatus(Enum):
     SUCCESS = "success"
     FAILED = "failed"
 
-class CircuitState(Enum):
-    CLOSED = "closed"
-    OPEN = "open"
-    HALF_OPEN = "half_open"
+class DocumentStatus(Enum):
+    PAYMENT_PENDING = "payment_pending"
+    PAYMENT_CONFIRMED = "payment_confirmed"
+    PDF_GENERATED = "pdf_generated"
+    EMAIL_SENT = "email_sent"
+    COMPLETED = "completed"
 
 PAGE_H = 792.0
 PAGE_W = 612.0
 TODAY = date.today().strftime("%d %B %Y")
 
+# FIXED: Correct prices
 DOCUMENT_PRICES = {
     "medical": 400,
     "sponsorship": 300,
@@ -88,37 +188,26 @@ FORM_TYPE_DISPLAY = {
 
 @dataclass(frozen=True)
 class Config:
-    """Immutable, validated configuration."""
     secret_key: str
     env: str
     debug: bool
     port: int = 8080
     host: str = "0.0.0.0"
-
-    # Sessions
     session_type: str = "mongodb"
     session_lifetime: int = 86400
     session_cookie_secure: bool = False
     session_cookie_httponly: bool = True
     session_cookie_samesite: str = "Lax"
-
-    # MongoDB
     mongo_uri: str = ""
-    mongo_max_pool: int = 200
-    mongo_min_pool: int = 10
+    mongo_max_pool: int = 50
+    mongo_min_pool: int = 5
     mongo_server_selection_timeout_ms: int = 5000
     mongo_socket_timeout_ms: int = 30000
     mongo_db_name: str = "supporting_docs"
-
-    # Redis
     redis_url: str = ""
     redis_socket_timeout: int = 5
-
-    # Rate Limiting
     rate_limit_per_minute: int = 30
     rate_limit_storage: str = "memory"
-
-    # M-Pesa
     mpesa_consumer_key: str = ""
     mpesa_consumer_secret: str = ""
     mpesa_shortcode: str = "4185095"
@@ -128,34 +217,20 @@ class Config:
     mpesa_token_timeout: Tuple[int, int] = (3, 3)
     mpesa_stk_timeout: Tuple[int, int] = (10, 10)
     mpesa_query_timeout: Tuple[int, int] = (2, 2)
-
-    # Pricing
     payment_amount_per_doc: int = 300
     referral_discount_per_document: int = 50
-
-    # Brevo
     brevo_api_key: str = ""
-    brevo_sender_email: str = "noreply@supportingdocs.com"
-    brevo_sender_name: str = "Supporting Documents"
-
-    # Admin
+    brevo_sender_email: str = "courseschecker@gmail.com"
+    brevo_sender_name: str = "EduDocs Kenya"
     admin_username: str = ""
     admin_password: str = ""
-
-    # Stamps
     stamp_scale: float = 1.5
-
-    # Workers / Queue
-    max_background_workers: int = 8
-    task_queue_max_size: int = 1000
-
-    # Logging
+    max_background_workers: int = 4
+    task_queue_max_size: int = 100
     log_level: str = "INFO"
     log_file: str = "app.log"
     log_max_bytes: int = 10 * 1024 * 1024
     log_backup_count: int = 5
-
-    # Health
     health_check_timeout: int = 5
 
     @property
@@ -170,43 +245,32 @@ class Config:
     def load(cls) -> "Config":
         env = os.getenv("FLASK_ENV", "development").lower()
         debug = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
-
+        if os.getenv("RENDER", "").lower() == "true":
+            debug = False
         secret_key = os.getenv("SECRET_KEY", "").strip()
-        if env == "production":
-            if not secret_key:
-                raise RuntimeError("CRITICAL: SECRET_KEY is required in production")
-            if debug:
-                print("WARNING: FLASK_DEBUG enabled in production")
-        else:
-            if not secret_key:
-                secret_key = secrets.token_hex(32)
-
+        if env == "production" and not secret_key:
+            raise RuntimeError("CRITICAL: SECRET_KEY is required in production")
+        if not secret_key:
+            secret_key = secrets.token_hex(32)
         mongo_uri = os.getenv("MONGO_URI", "").strip()
         if env == "production" and not mongo_uri:
             raise RuntimeError("CRITICAL: MONGO_URI is required in production")
-
         admin_user = os.getenv("ADMIN_USERNAME", "").strip()
         admin_pass = os.getenv("ADMIN_PASSWORD", "").strip()
         if env == "production" and (not admin_user or not admin_pass):
             raise RuntimeError("CRITICAL: ADMIN_USERNAME and ADMIN_PASSWORD required in production")
-
         callback = os.getenv("MPESA_CALLBACK_URL", "").strip()
         if env == "production" and not callback:
             raise RuntimeError("CRITICAL: MPESA_CALLBACK_URL required in production")
-        if env == "production" and "ngrok" in callback:
-            print("WARNING: MPESA_CALLBACK_URL uses ngrok")
-
         return cls(
-            secret_key=secret_key,
-            env=env,
-            debug=debug,
+            secret_key=secret_key, env=env, debug=debug,
             port=int(os.getenv("PORT", "8080")),
             session_type=os.getenv("SESSION_TYPE", "mongodb").lower(),
             session_lifetime=int(os.getenv("SESSION_LIFETIME", "86400")),
             session_cookie_secure=env == "production",
             mongo_uri=mongo_uri,
-            mongo_max_pool=int(os.getenv("MONGO_MAX_POOL", "200")),
-            mongo_min_pool=int(os.getenv("MONGO_MIN_POOL", "10")),
+            mongo_max_pool=int(os.getenv("MONGO_MAX_POOL", "50")),
+            mongo_min_pool=int(os.getenv("MONGO_MIN_POOL", "5")),
             redis_url=os.getenv("REDIS_URL", "").strip(),
             rate_limit_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "30")),
             rate_limit_storage=os.getenv("RATE_LIMIT_STORAGE", "memory").lower(),
@@ -219,22 +283,44 @@ class Config:
             payment_amount_per_doc=int(os.getenv("PAYMENT_AMOUNT_KES", "300")),
             referral_discount_per_document=int(os.getenv("REFERRAL_DISCOUNT_PER_DOCUMENT", "50")),
             brevo_api_key=os.getenv("BREVO_API_KEY", "").strip(),
-            brevo_sender_email=os.getenv("BREVO_SENDER_EMAIL", "noreply@supportingdocs.com").strip(),
-            brevo_sender_name=os.getenv("BREVO_SENDER_NAME", "Supporting Documents").strip(),
+            brevo_sender_email=os.getenv("BREVO_SENDER_EMAIL", "courseschecker@gmail.com").strip(),
+            brevo_sender_name=os.getenv("BREVO_SENDER_NAME", "EduDocs Kenya").strip(),
             admin_username=admin_user,
             admin_password=admin_pass,
             stamp_scale=float(os.getenv("STAMP_SCALE_FACTOR", "1.5")),
-            max_background_workers=int(os.getenv("MAX_BACKGROUND_WORKERS", "8")),
+            max_background_workers=int(os.getenv("MAX_BACKGROUND_WORKERS", "4")),
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
             log_file=os.getenv("LOG_FILE", "app.log"),
         )
 
 # ============================================================================
-# STRUCTURED LOGGING
+# PHONE FORMATTING
+# ============================================================================
+
+def format_phone(phone_number: str) -> Optional[str]:
+    if not phone_number:
+        return None
+    cleaned = re.sub(r"\D", "", phone_number.strip())
+    if not cleaned:
+        return None
+    if cleaned.startswith("0") and len(cleaned) == 10:
+        formatted = "254" + cleaned[1:]
+    elif cleaned.startswith("254") and len(cleaned) == 12:
+        formatted = cleaned
+    elif len(cleaned) == 9:
+        formatted = "254" + cleaned
+    else:
+        formatted = cleaned if cleaned.startswith("254") else "254" + cleaned
+    return formatted if len(formatted) == 12 and formatted.isdigit() else None
+
+def validate_phone(phone: str) -> bool:
+    return bool(phone) and len(phone) == 12 and phone.isdigit() and phone.startswith("254")
+
+# ============================================================================
+# LOGGING
 # ============================================================================
 
 class JSONFormatter(logging.Formatter):
-    """JSON structured logging for production observability."""
     def format(self, record):
         log_obj = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -252,18 +338,13 @@ class JSONFormatter(logging.Formatter):
             log_obj["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_obj, default=str)
 
-
 def setup_logging(cfg: Config):
     logger = logging.getLogger("app")
     logger.setLevel(getattr(logging, cfg.log_level, logging.INFO))
     logger.handlers = []
-
-    # Console
     console = logging.StreamHandler(sys.stdout)
     console.setFormatter(JSONFormatter())
     logger.addHandler(console)
-
-    # File
     if cfg.log_file:
         try:
             fh = RotatingFileHandler(
@@ -274,12 +355,9 @@ def setup_logging(cfg: Config):
             logger.addHandler(fh)
         except Exception as e:
             logger.error(f"File logging setup failed: {e}")
-
     return logger
 
-
 class LogContext:
-    """Inject request_id and user into log records. Safe outside Flask context."""
     def __init__(self, logger: logging.Logger):
         self.logger = logger
 
@@ -315,15 +393,12 @@ class DatabaseManager:
         self._db = None
         self._lock = threading.RLock()
         self._connected = False
-
         if not PYMONGO_AVAILABLE:
-            self.log.warning("PyMongo not installed. Using in-memory storage (NOT for production).")
+            self.log.warning("PyMongo not installed.")
             return
-
         if not cfg.mongo_uri:
-            self.log.warning("MONGO_URI not set. Using in-memory storage.")
+            self.log.warning("MONGO_URI not set.")
             return
-
         self._connect()
 
     def _connect(self):
@@ -349,21 +424,21 @@ class DatabaseManager:
 
     def _ensure_indexes(self):
         try:
-            self._db.documents.create_index("checkout_request_id", background=True)
-            self._db.documents.create_index("student_details.email", background=True)
-            self._db.documents.create_index("created_at", background=True)
-            self._db.documents.create_index("payment_status", background=True)
             self._db.documents.create_index("bundle_id", unique=True, background=True)
-            self._db.referral_codes.create_index("code", unique=True, background=True)
-            self._db.sessions.create_index("expires", expireAfterSeconds=0, background=True)
+            self._db.documents.create_index("student_email", background=True)
+            self._db.documents.create_index("payment_status", background=True)
+            self._db.documents.create_index("transaction_code", background=True)  # Not unique to avoid conflicts
+            self._db.documents.create_index("checkout_request_id", background=True)
+            self._db.documents.create_index("created_at", background=True)
+            self._db.documents.create_index("document_status", background=True)
+        except DuplicateKeyError as e:
+            self.log.warning(f"Index creation warning: {e}")
         except Exception as e:
             self.log.error(f"Index creation error: {e}")
 
     @property
     def db(self):
-        if self._connected and self._db is not None:
-            return self._db
-        return None
+        return self._db if self._connected and self._db is not None else None
 
     @property
     def is_connected(self) -> bool:
@@ -390,7 +465,6 @@ class DatabaseManager:
             self._connected = False
             self.log.info("MongoDB connection closed")
 
-
 # ============================================================================
 # REDIS / CACHE
 # ============================================================================
@@ -402,7 +476,6 @@ class CacheManager:
         self._redis: Optional[redis.Redis] = None
         self._memory_cache: Dict[str, Tuple[Any, float]] = {}
         self._memory_lock = threading.RLock()
-
         if cfg.redis_url and REDIS_AVAILABLE:
             try:
                 self._redis = redis.from_url(
@@ -424,7 +497,6 @@ class CacheManager:
                 return json.loads(val) if val else None
         except Exception as e:
             self.log.debug(f"Redis get error: {e}")
-
         with self._memory_lock:
             entry = self._memory_cache.get(key)
             if entry and time.time() < entry[1]:
@@ -439,7 +511,6 @@ class CacheManager:
                 return
         except Exception as e:
             self.log.debug(f"Redis set error: {e}")
-
         with self._memory_lock:
             self._memory_cache[key] = (value, time.time() + ttl)
 
@@ -461,7 +532,6 @@ class CacheManager:
         except Exception as e:
             return False, str(e)
 
-
 # ============================================================================
 # CIRCUIT BREAKER
 # ============================================================================
@@ -471,26 +541,25 @@ class CircuitBreaker:
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.log = logger
-        self._state = CircuitState.CLOSED
+        self._state = "CLOSED"
         self._failure_count = 0
         self._last_failure_time: Optional[float] = None
         self._lock = threading.RLock()
 
     def call(self, func: Callable, *args, **kwargs):
         with self._lock:
-            if self._state == CircuitState.OPEN:
+            if self._state == "OPEN":
                 if time.time() - (self._last_failure_time or 0) > self.recovery_timeout:
-                    self._state = CircuitState.HALF_OPEN
+                    self._state = "HALF_OPEN"
                     self._failure_count = 0
                     if self.log:
                         self.log.info("Circuit breaker half-open")
                 else:
                     raise RuntimeError("Circuit breaker is OPEN")
-
         try:
             result = func(*args, **kwargs)
             with self._lock:
-                self._state = CircuitState.CLOSED
+                self._state = "CLOSED"
                 self._failure_count = 0
             return result
         except Exception as e:
@@ -498,14 +567,13 @@ class CircuitBreaker:
                 self._failure_count += 1
                 self._last_failure_time = time.time()
                 if self._failure_count >= self.failure_threshold:
-                    self._state = CircuitState.OPEN
+                    self._state = "OPEN"
                     if self.log:
                         self.log.error(f"Circuit breaker OPEN after {self.failure_threshold} failures")
             raise e
 
-
 # ============================================================================
-# M-PESA CLIENT (with pending handling)
+# M-PESA CLIENT
 # ============================================================================
 
 class MpesaClient:
@@ -514,9 +582,8 @@ class MpesaClient:
         self.cache = cache
         self.log = logger
         self._cb = CircuitBreaker(failure_threshold=5, recovery_timeout=60, logger=logger)
-
         self._session = requests.Session()
-        retry = Retry(total=2, backoff_factor=0.5, status_forcelist=[502, 503, 504], allowed_methods=["GET", "POST"])
+        retry = Retry(total=3, backoff_factor=0.5, status_forcelist=[502, 503, 504], allowed_methods=["GET", "POST"])
         adapter = HTTPAdapter(pool_connections=20, pool_maxsize=50, max_retries=retry)
         self._session.mount("https://", adapter)
         self._session.mount("http://", adapter)
@@ -525,11 +592,9 @@ class MpesaClient:
         cached = self.cache.get("mpesa_token")
         if cached:
             return cached
-
         if not self.cfg.mpesa_consumer_key or not self.cfg.mpesa_consumer_secret:
             self.log.error("M-Pesa credentials not configured")
             return None
-
         url = f"{self.cfg.mpesa_base_url}/oauth/v1/generate?grant_type=client_credentials"
         try:
             resp = self._session.get(
@@ -563,7 +628,6 @@ class MpesaClient:
         token = self._get_token()
         if not token:
             return False, {"error": "Could not obtain M-Pesa access token"}
-
         password, timestamp = self._password_and_timestamp()
         payload = {
             "BusinessShortCode": self.cfg.mpesa_shortcode,
@@ -579,14 +643,12 @@ class MpesaClient:
             "TransactionDesc": desc[:13],
         }
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
         resp = self._session.post(
             f"{self.cfg.mpesa_base_url}/mpesa/stkpush/v1/processrequest",
             json=payload, headers=headers, timeout=self.cfg.mpesa_stk_timeout
         )
         data = resp.json()
         elapsed = time.time() - t0
-
         if resp.status_code == 200 and data.get("ResponseCode") == "0":
             return True, {
                 "checkout_request_id": data.get("CheckoutRequestID"),
@@ -596,17 +658,21 @@ class MpesaClient:
             }
         return False, {"error": data.get("errorMessage", data.get("ResponseDescription", "STK push failed"))}
 
-    def query_transaction(self, checkout_request_id: str) -> Tuple[bool, Dict]:
-        try:
-            return self._cb.call(self._query, checkout_request_id)
-        except Exception as e:
-            return False, {"error": str(e)}
+    def query_transaction(self, checkout_request_id: str, max_retries: int = 3) -> Tuple[bool, Dict]:
+        for attempt in range(max_retries):
+            try:
+                return self._cb.call(self._query, checkout_request_id)
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                return False, {"error": str(e)}
+        return False, {"error": "Max retries exceeded"}
 
     def _query(self, checkout_request_id: str) -> Tuple[bool, Dict]:
         token = self._get_token()
         if not token:
             return False, {"error": "Could not obtain M-Pesa access token"}
-
         password, timestamp = self._password_and_timestamp()
         payload = {
             "BusinessShortCode": self.cfg.mpesa_shortcode,
@@ -615,16 +681,13 @@ class MpesaClient:
             "CheckoutRequestID": checkout_request_id,
         }
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
         resp = self._session.post(
             f"{self.cfg.mpesa_base_url}/mpesa/stkpushquery/v1/query",
             json=payload, headers=headers, timeout=self.cfg.mpesa_query_timeout
         )
         data = resp.json()
-
         if resp.status_code != 200:
             return False, {"error": data.get("errorMessage", "Query failed")}
-
         result_code = data.get("ResultCode")
         if result_code == 0:
             items = {i.get("Name"): i.get("Value") for i in data.get("CallbackMetadata", {}).get("Item", [])}
@@ -635,10 +698,8 @@ class MpesaClient:
                 "phone": items.get("PhoneNumber", ""),
                 "transaction_date": items.get("TransactionDate", ""),
             }
-        # Treat pending codes (1, 1037) as pending, not failed
         if result_code in (1, 1037) or "pending" in data.get("ResultDesc", "").lower():
             return False, {"status": "pending", "error": data.get("ResultDesc", "Still processing")}
-        # Any other non-zero code means a real failure
         return False, {"status": "failed", "error": data.get("ResultDesc", "Transaction failed")}
 
     def parse_callback(self, callback_data: Dict) -> Tuple[Optional[str], Optional[int], str, Dict]:
@@ -651,7 +712,6 @@ class MpesaClient:
             return checkout, result_code, result_desc, items
         except Exception as e:
             return None, None, str(e), {}
-
 
 # ============================================================================
 # RATE LIMITER
@@ -668,7 +728,6 @@ class RateLimiter:
     def is_allowed(self, key: str) -> bool:
         now = time.time()
         window = 60
-
         if self.cache._redis:
             try:
                 pipe = self.cache._redis.pipeline()
@@ -680,7 +739,6 @@ class RateLimiter:
                 return count < self.cfg.rate_limit_per_minute
             except Exception as e:
                 self.log.debug(f"Redis rate limit error: {e}")
-
         with self._lock:
             if key not in self._memory_store:
                 self._memory_store[key] = []
@@ -689,7 +747,6 @@ class RateLimiter:
                 return False
             self._memory_store[key].append(now)
             return True
-
 
 def rate_limit(limiter: RateLimiter):
     def decorator(f):
@@ -702,9 +759,8 @@ def rate_limit(limiter: RateLimiter):
         return decorated
     return decorator
 
-
 # ============================================================================
-# BACKGROUND TASK EXECUTOR
+# TASK EXECUTOR
 # ============================================================================
 
 class TaskExecutor:
@@ -719,12 +775,10 @@ class TaskExecutor:
         if self._shutdown:
             self.log.warning("Task submitted after shutdown")
             return None
-
         acquired = self._semaphore.acquire(timeout=5)
         if not acquired:
             self.log.error("Task queue full — backpressure triggered")
             raise RuntimeError("Server busy. Please try again later.")
-
         def wrapper():
             try:
                 return func(*args, **kwargs)
@@ -733,7 +787,6 @@ class TaskExecutor:
                 raise
             finally:
                 self._semaphore.release()
-
         future = self._executor.submit(wrapper)
         self._futures.add(future)
         return future
@@ -743,9 +796,8 @@ class TaskExecutor:
         self._executor.shutdown(wait=wait)
         self.log.info("Task executor shut down")
 
-
 # ============================================================================
-# EMAIL SERVICE (with CC support)
+# EMAIL SERVICE
 # ============================================================================
 
 class EmailService:
@@ -759,27 +811,24 @@ class EmailService:
     def send(self, to_email: str, to_name: str, subject: str, html: str,
              attachments: Optional[List[Tuple[str, bytes]]] = None,
              cc: Optional[List[str]] = None) -> Tuple[bool, str]:
-        """
-        Send an email via Brevo.
-        :param cc: List of email addresses to CC.
-        """
         if not self.cfg.brevo_api_key:
             self.log.error("BREVO_API_KEY not configured")
             return False, "Brevo API key not configured"
-
+        
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {"accept": "application/json", "api-key": self.cfg.brevo_api_key, "content-type": "application/json"}
+        
         payload = {
             "sender": {"name": self.cfg.brevo_sender_name, "email": self.cfg.brevo_sender_email},
             "to": [{"email": to_email, "name": to_name or "Valued Customer"}],
             "subject": subject,
             "htmlContent": html,
         }
-
-        # Add CC if provided
+        
         if cc:
             payload["cc"] = [{"email": email} for email in cc]
-
+            self.log.info(f"CC emails: {cc}")
+        
         if attachments:
             payload["attachment"] = [
                 {"content": base64.b64encode(data).decode("utf-8"), "name": name}
@@ -787,7 +836,7 @@ class EmailService:
             ]
 
         try:
-            resp = self._session.post(url, json=payload, headers=headers, timeout=10)
+            resp = self._session.post(url, json=payload, headers=headers, timeout=30)
             if resp.status_code in (200, 201):
                 self.log.info(f"Email sent to {to_email} (CC: {cc})")
                 return True, "OK"
@@ -798,7 +847,6 @@ class EmailService:
         except Exception as e:
             self.log.error(f"Email send failed: {e}")
             return False, str(e)
-
 
 # ============================================================================
 # IN-MEMORY LRU CACHES
@@ -829,15 +877,12 @@ class LRUCache:
         with self._lock:
             self._cache.clear()
 
-
 # ============================================================================
 # FONT & STAMP SETUP
 # ============================================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STAMPED_BASE_DIR = os.path.join(BASE_DIR, "stamped_templates")
 STAMPS_DIR = os.path.join(BASE_DIR, "stamps")
-os.makedirs(STAMPED_BASE_DIR, exist_ok=True)
 os.makedirs(STAMPS_DIR, exist_ok=True)
 
 _font_path = os.path.join(BASE_DIR, "PatrickHand.ttf")
@@ -852,7 +897,10 @@ try:
 except Exception:
     pass
 
-# Stamp coordinates (unchanged)
+# ============================================================================
+# STAMP COORDINATES
+# ============================================================================
+
 MEDICAL_STAMPS = {
     "officer_stamp": {"box": (475.1, 412.2, 551.9, 440.2)},
     "commissioner_stamp": {"box": (490.5, 542.6, 567.3, 566.6)},
@@ -880,20 +928,6 @@ FORM_STAMP_MAP = {
     },
 }
 
-STAMP_POSITIONS = {
-    "medical": {
-        "hospital_stamp": {"x": 475.1, "y": 792 - 440.2, "width": 76.8, "height": 28.0},
-        "commissioner_stamp": {"x": 490.5, "y": 792 - 566.6, "width": 76.8, "height": 24.0}
-    },
-    "sponsorship": {
-        "sponsor_stamp": {"x": 457.1, "y": 792 - 452.0, "width": 76.8, "height": 24.0},
-        "commissioner_stamp": {"x": 460.0, "y": 792 - 607.7, "width": 76.8, "height": 24.0}
-    },
-    "single_parent": {
-        "commissioner_stamp": {"x": 475.2, "y": 792 - 698.1, "width": 76.8, "height": 24.0}
-    }
-}
-
 _stamp_image_cache = LRUCache(capacity=50)
 
 def to_reportlab_box(box, page_h=PAGE_H):
@@ -907,12 +941,10 @@ def get_stamp_image(stamp_type: str, stamps_dir: str, logger: LogContext) -> Opt
     cached = _stamp_image_cache.get(stamp_type)
     if cached is not None:
         return cached
-
     possible_paths = [
         os.path.join(stamps_dir, f"{stamp_type}.{ext}")
         for ext in ["png", "PNG", "jpg", "jpeg", "gif", "webp"]
     ]
-
     for path in possible_paths:
         if not os.path.exists(path):
             continue
@@ -920,7 +952,6 @@ def get_stamp_image(stamp_type: str, stamps_dir: str, logger: LogContext) -> Opt
             file_size = os.path.getsize(path)
             if file_size < 100:
                 continue
-
             img = Image.open(path).convert("RGBA")
             datas = img.getdata()
             new_data = [
@@ -928,11 +959,9 @@ def get_stamp_image(stamp_type: str, stamps_dir: str, logger: LogContext) -> Opt
                 for item in datas
             ]
             img.putdata(new_data)
-
             max_size = 300
             if img.width > max_size or img.height > max_size:
                 img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-
             buf = io.BytesIO()
             img.save(buf, format="PNG")
             buf.seek(0)
@@ -942,7 +971,6 @@ def get_stamp_image(stamp_type: str, stamps_dir: str, logger: LogContext) -> Opt
             return reader
         except Exception as e:
             logger.error(f"[STAMP] Failed to load {path}: {e}")
-
     logger.warning(f"[STAMP] No image found for {stamp_type}")
     return None
 
@@ -966,21 +994,17 @@ def draw_stamp(cv, stamp_img, x, y, width, height, rotation=0):
 def get_stamps_for_form_type(form_type: str, stamp_scale: float, logger: LogContext) -> Optional[List[Tuple]]:
     if form_type not in FORM_STAMP_MAP:
         return None
-
     form_info = FORM_STAMP_MAP[form_type]
     stamps = []
     for internal_name, stamp_def in form_info["defs"].items():
         stamp_type = form_info["type_map"][internal_name]
         x, y, w, h = to_reportlab_box(stamp_def["box"])
-
         if stamp_scale != 1.0:
             new_w, new_h = w * stamp_scale, h * stamp_scale
             x -= (new_w - w) / 2
             y -= (new_h - h) / 2
             w, h = new_w, new_h
-
         stamps.append((stamp_type, x, y, w, h, 0))
-
     return stamps if stamps else None
 
 def draw_text_stamp(cv, stamp_type, x, y, width, height):
@@ -1097,17 +1121,14 @@ def render_overlay(fields, sigs, underlines, pdf_path, stamps=None, stamps_dir: 
     buf = io.BytesIO()
     cv = canvas.Canvas(buf, pagesize=letter)
     cv.setFillColorRGB(0.04, 0.04, 0.28)
-
     for f in fields:
         txt = f.get("text", "")
         if not txt:
             continue
         cv.setFont(f.get("font_name", FONT), f.get("font_size", 10))
         cv.drawString(f.get("x", 0), f.get("y", 0), txt)
-
     for sig_data, sx, sy, sw, sh in sigs:
         draw_signature(cv, sig_data, sx, sy, sw, sh)
-
     if stamps and logger:
         for stamp_info in stamps:
             if len(stamp_info) == 5:
@@ -1122,15 +1143,12 @@ def render_overlay(fields, sigs, underlines, pdf_path, stamps=None, stamps_dir: 
                 draw_stamp(cv, stamp_img, sx, sy, sw, sh, rotation)
             else:
                 draw_text_stamp(cv, stamp_type, sx, sy, sw, sh)
-
     cv.setStrokeColorRGB(0.04, 0.04, 0.28)
     cv.setLineWidth(1.5)
     for x1, y1, x2, y2 in underlines:
         cv.line(x1, y1, x2, y2)
-
     cv.save()
     buf.seek(0)
-
     orig = PdfReader(pdf_path)
     ovl = PdfReader(buf)
     writer = PdfWriter()
@@ -1139,14 +1157,13 @@ def render_overlay(fields, sigs, underlines, pdf_path, stamps=None, stamps_dir: 
     writer.add_page(pg)
     for p in orig.pages[1:]:
         writer.add_page(p)
-
     out = io.BytesIO()
     writer.write(out)
     out.seek(0)
     return out.read()
 
 # ============================================================================
-# FORM BUILDERS – Commissioner name removed, date variables defined
+# FORM BUILDERS
 # ============================================================================
 
 def build_sponsorship(d, adm, include_admin_sigs=True):
@@ -1198,7 +1215,6 @@ def build_sponsorship(d, adm, include_admin_sigs=True):
     sigs.append((d.get("student_sig", ""), 356.2, SN_S4_SIG_Y, 80, 28))
     return fields, sigs, underlines
 
-
 def build_medical(d, adm, include_admin_sigs=True):
     fields = []
     underlines = []
@@ -1206,7 +1222,6 @@ def build_medical(d, adm, include_admin_sigs=True):
     date_fs = 11
     MD_OFF_NAME_Y = text_in_gap(425.5, 430.6, name_fs)
     MD_OFF_SIG_Y = sig_in_gap(425.5, 430.6, 28)
-    # Date variable for commissioner date – defined here
     MD_COMM_DATE_Y = text_below_line(543.7, date_fs, 6)
     MD_COMM_SIG_Y = sig_in_gap(543.1, 534.7, 28)
 
@@ -1226,7 +1241,6 @@ def build_medical(d, adm, include_admin_sigs=True):
         {"font_size": 10, "x": 257.0, "y": cy(287.09, 302.57), "text": adm.get("reg_number", ""), "font_name": FONT},
     ])
     fields.append({"font_size": name_fs, "x": 103.0, "y": MD_OFF_NAME_Y, "text": adm.get("officer_name", ""), "font_name": FONT})
-    # Commissioner name field removed – only date and signature remain
     fields.append({"font_size": date_fs, "x": 430.0, "y": MD_COMM_DATE_Y, "text": d.get("comm_date", TODAY), "font_name": STD_FONT})
 
     sigs = []
@@ -1234,7 +1248,6 @@ def build_medical(d, adm, include_admin_sigs=True):
         sigs.append((adm.get("officer_sig", ""), 259.2, MD_OFF_SIG_Y, 130, 28))
         sigs.append((adm.get("commissioner_sig", ""), 356.2, MD_COMM_SIG_Y, 80, 28))
     return fields, sigs, underlines
-
 
 def build_single_parent(d, adm, include_admin_sigs=True):
     rel = d.get("relationship", "")
@@ -1246,7 +1259,6 @@ def build_single_parent(d, adm, include_admin_sigs=True):
     SP_PAR_NAME_Y = text_in_gap(540.9, 547.0, name_fs)
     SP_PAR_DATE_Y = SP_PAR_NAME_Y
     SP_PAR_SIG_Y = sig_in_gap(540.9, 547.0, 28)
-    # Date variable for commissioner date – defined here
     SP_COMM_DATE_Y = text_below_line(660.2, date_fs, 6)
     SP_COMM_SIG_Y = sig_in_gap(659.6, 651.3, 28)
 
@@ -1272,7 +1284,6 @@ def build_single_parent(d, adm, include_admin_sigs=True):
         fields.append(Tick(SP_MAR_CHECK[mar], 331.31))
     fields.append({"font_size": name_fs, "x": 85.0, "y": SP_PAR_NAME_Y, "text": d.get("parent_name", ""), "font_name": FONT})
     fields.append({"font_size": date_fs, "x": 470.0, "y": SP_PAR_DATE_Y, "text": d.get("parent_date", TODAY), "font_name": STD_FONT})
-    # Commissioner name field removed – only date and signature remain
     fields.append({"font_size": date_fs, "x": 430.0, "y": SP_COMM_DATE_Y, "text": d.get("comm_date", TODAY), "font_name": STD_FONT})
 
     sigs = []
@@ -1281,6 +1292,9 @@ def build_single_parent(d, adm, include_admin_sigs=True):
         sigs.append((adm.get("commissioner_sig", ""), 355.9, SP_COMM_SIG_Y, 80, 28))
     return fields, sigs, underlines
 
+# ============================================================================
+# BUILDERS DICTIONARY
+# ============================================================================
 
 BUILDERS = {
     "medical": (build_medical, "Medical_Form.pdf", "Medical_Form_Filled.pdf"),
@@ -1313,70 +1327,116 @@ DEFAULT_ADMIN_SETTINGS = {
 }
 
 # ============================================================================
-# PHONE FORMATTING
+# EMAIL TEMPLATE WITH BUTTONS
 # ============================================================================
 
-def format_phone(phone_number: str) -> Optional[str]:
-    if not phone_number:
-        return None
-    cleaned = re.sub(r"\D", "", phone_number.strip())
-    if not cleaned:
-        return None
-    if cleaned.startswith("0") and len(cleaned) == 10:
-        formatted = "254" + cleaned[1:]
-    elif cleaned.startswith("254") and len(cleaned) == 12:
-        formatted = cleaned
-    elif len(cleaned) == 9:
-        formatted = "254" + cleaned
+def build_payment_confirmation_email_with_buttons(student_name, bundle_id, transaction_code, form_types, total_amount, pdf_urls):
+    doc_buttons = ""
+    for ft in form_types:
+        display_name = FORM_TYPE_DISPLAY.get(ft, ft)
+        download_url = f"/download_pdf/{bundle_id}/{ft}"
+        doc_buttons += f'''
+        <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #10B981;">
+            <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 10px;">📄 {display_name}</div>
+            <a href="{download_url}" 
+               style="display: inline-block; padding: 14px 35px; background: #10B981; color: white; 
+                      text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;
+                      border: none; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                ⬇️ Download {display_name}
+            </a>
+            <span style="display: inline-block; margin-left: 15px; color: #666; font-size: 14px;">
+                (PDF, click to save to your device)
+            </span>
+        </div>
+        '''
+    if len(form_types) > 1:
+        all_download_url = f"/download_all/{bundle_id}"
+        download_all = f'''
+        <div style="margin: 20px 0; padding: 20px; background: #ecfdf5; border-radius: 10px; text-align: center; border: 2px dashed #10B981;">
+            <a href="{all_download_url}" 
+               style="display: inline-block; padding: 16px 45px; background: #059669; color: white; 
+                      text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px;
+                      border: none; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.2);">
+                📦 Download All Documents (ZIP)
+            </a>
+            <br>
+            <span style="display: block; margin-top: 10px; color: #666; font-size: 14px;">
+                Click to download all your documents in one zip file
+            </span>
+        </div>
+        '''
     else:
-        formatted = cleaned if cleaned.startswith("254") else "254" + cleaned
-    return formatted if len(formatted) == 12 and formatted.isdigit() else None
-
-def validate_phone(phone: str) -> bool:
-    return bool(phone) and len(phone) == 12 and phone.isdigit() and phone.startswith("254")
-
-# ============================================================================
-# EMAIL TEMPLATE
-# ============================================================================
-
-def build_payment_confirmation_email_multi(student_name, bundle_id, transaction_code, form_types, total_amount):
-    doc_list = "".join([f"<li>{FORM_TYPE_DISPLAY.get(ft, ft)}</li>" for ft in form_types])
+        download_all = ""
+    
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: #10B981; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
-        .content {{ padding: 30px; background: #f9f9f9; }}
-        .footer {{ padding: 20px; text-align: center; color: #666; font-size: 12px; }}
-        .details {{ background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }}
-        .doc-list {{ list-style: none; padding: 0; }}
-        .doc-list li {{ padding: 8px 0; border-bottom: 1px solid #eee; }}
-        .button {{ display: inline-block; padding: 12px 30px; background: #10B981; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f4f6f9; margin: 0; padding: 0; }}
+        .container {{ max-width: 650px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }}
+        .header {{ background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 30px; text-align: center; }}
+        .header h1 {{ margin: 0; font-size: 28px; }}
+        .header p {{ margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; }}
+        .content {{ padding: 35px; }}
+        .content h3 {{ color: #10B981; font-size: 22px; margin-top: 0; }}
+        .details {{ background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+        .details p {{ margin: 8px 0; font-size: 15px; }}
+        .divider {{ border-top: 2px solid #e5e7eb; margin: 25px 0; }}
+        .doc-section {{ margin: 20px 0; }}
+        .doc-section h4 {{ font-size: 18px; color: #333; margin-bottom: 15px; }}
+        .button-primary {{ display: inline-block; padding: 14px 35px; background: #10B981; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }}
+        .button-primary:hover {{ transform: scale(1.02); background: #059669; }}
+        .footer {{ padding: 20px; text-align: center; color: #6B7280; font-size: 13px; border-top: 1px solid #e5e7eb; }}
+        @media only screen and (max-width: 480px) {{
+            .content {{ padding: 20px; }}
+            .header {{ padding: 20px; }}
+            .header h1 {{ font-size: 22px; }}
+            .button-primary {{ display: block; text-align: center; margin: 10px 0; }}
+        }}
     </style>
     </head>
     <body>
     <div class="container">
-        <div class="header"><h2>Payment Confirmed!</h2><p>Supporting Documents Generation</p></div>
+        <div class="header">
+            <h1>✅ Payment Confirmed!</h1>
+            <p>Your Supporting Documents Are Ready</p>
+        </div>
         <div class="content">
             <h3>Dear {student_name},</h3>
-            <p>We are pleased to confirm that your payment has been successfully processed.</p>
+            <p>We are pleased to confirm that your payment has been successfully processed. Your documents are ready for download.</p>
             <div class="details">
-                <h4>Transaction Details</h4>
-                <p><strong>Documents Generated:</strong></p>
-                <ul class="doc-list">{doc_list}</ul>
-                <p><strong>Bundle ID:</strong> {bundle_id}</p>
-                <p><strong>Transaction Code:</strong> {transaction_code}</p>
-                <p><strong>Date:</strong> {datetime.now().strftime('%d %B %Y at %H:%M')}</p>
-                <p><strong>Total Paid:</strong> KES {total_amount}</p>
+                <p><strong>🔑 Bundle ID:</strong> <span style="background: #e5e7eb; padding: 2px 10px; border-radius: 4px; font-family: monospace;">{bundle_id}</span></p>
+                <p><strong>📝 Transaction Code:</strong> <span style="background: #e5e7eb; padding: 2px 10px; border-radius: 4px; font-family: monospace;">{transaction_code}</span></p>
+                <p><strong>📅 Date:</strong> {datetime.now().strftime('%d %B %Y at %H:%M')}</p>
+                <p><strong>💰 Total Paid:</strong> <span style="color: #10B981; font-weight: bold; font-size: 18px;">KES {total_amount}</span></p>
             </div>
-            <p><strong>All your documents are attached to this email.</strong></p>
-            <p>You can also download them anytime using your email address on our portal.</p>
-            <p style="margin-top: 20px;">Thank you for using our service.<br><strong>Supporting Documents Team</strong></p>
+            <div class="divider"></div>
+            <div class="doc-section">
+                <h4>📄 Your Documents</h4>
+                <p style="color: #6B7280; font-size: 14px; margin-bottom: 20px;">
+                    Click the buttons below to download each document. All files are in PDF format.
+                </p>
+                {doc_buttons}
+            </div>
+            {download_all}
+            <div style="margin-top: 25px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                <p style="margin: 0; font-size: 14px; color: #92400E;">
+                    💡 <strong>Tip:</strong> If the document opens in your browser, look for the save/download icon 
+                    (usually a floppy disk or downward arrow) to save it to your device.
+                </p>
+            </div>
+            <p style="margin-top: 30px; font-size: 15px;">
+                Thank you for using our service.<br>
+                <strong style="color: #10B981;">Supporting Documents Team</strong>
+            </p>
         </div>
-        <div class="footer"><p>This is an automated message. Please do not reply to this email.</p><p>&copy; 2026 Supporting Documents. All rights reserved.</p></div>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; 2026 Supporting Documents. All rights reserved.</p>
+        </div>
     </div>
     </body>
     </html>
@@ -1450,11 +1510,10 @@ def create_app() -> Flask:
         return response
 
     # ============================================================
-    # SESSION PERSISTENCE HELPERS
+    # SESSION HELPERS
     # ============================================================
 
     def save_session_state(selected_types=None, form_data_map=None, referral_code=None):
-        """Store user's current selection and form data in Flask session."""
         if selected_types is not None:
             session['selected_types'] = selected_types
         if form_data_map is not None:
@@ -1466,7 +1525,6 @@ def create_app() -> Flask:
         session.modified = True
 
     def load_session_state():
-        """Retrieve stored session data."""
         return {
             'selected_types': session.get('selected_types', []),
             'form_data_map': session.get('form_data_map', {}),
@@ -1474,7 +1532,21 @@ def create_app() -> Flask:
         }
 
     # ============================================================
-    # HELPERS
+    # ADMIN DECORATOR
+    # ============================================================
+
+    def admin_required(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not session.get("admin_logged_in"):
+                flash("Please log in to access the admin area.", "warning")
+                return redirect(url_for("admin_login"))
+            g.user_email = "admin"
+            return f(*args, **kwargs)
+        return decorated
+
+    # ============================================================
+    # DATABASE HELPERS
     # ============================================================
 
     def get_admin_settings():
@@ -1494,12 +1566,6 @@ def create_app() -> Flask:
         else:
             memory_storage["admin_settings"] = settings
 
-    def save_user_document(record):
-        if use_mongo:
-            return mongo_db.documents.insert_one(record)
-        memory_storage[record["bundle_id"]] = record
-        return record
-
     def get_user_document_by_bundle_id(bundle_id):
         if use_mongo:
             return mongo_db.documents.find_one({"bundle_id": bundle_id})
@@ -1511,16 +1577,16 @@ def create_app() -> Flask:
         email_lower = email.lower().strip()
         if use_mongo:
             docs = list(mongo_db.documents.find(
-                {"student_details.email": {"$regex": f"^{re.escape(email_lower)}$", "$options": "i"}}
+                {"student_email": {"$regex": f"^{re.escape(email_lower)}$", "$options": "i"}}
             ).sort("created_at", -1).limit(10))
             for doc in docs:
-                if doc.get("payment_status") == "success":
+                if doc.get("payment_status") == PaymentStatus.SUCCESS.value:
                     return doc
             return docs[0] if docs else None
         matching = [v for v in memory_storage.values() if isinstance(v, dict) and v.get("student_details", {}).get("email", "").lower() == email_lower]
         matching.sort(key=lambda x: x.get("created_at", datetime.min), reverse=True)
         for doc in matching:
-            if doc.get("payment_status") == "success":
+            if doc.get("payment_status") == PaymentStatus.SUCCESS.value:
                 return doc
         return matching[0] if matching else None
 
@@ -1557,7 +1623,7 @@ def create_app() -> Flask:
             return True
 
     def validate_referral_code(code):
-        code = code.upper().strip()
+        code = code.upper().strip() if code else ""
         if not code:
             return False, 0, ""
         if use_mongo:
@@ -1592,159 +1658,216 @@ def create_app() -> Flask:
         stamps = get_stamps_for_form_type(form_type, cfg.stamp_scale, log) if stamped else None
         return render_overlay(fields, sigs, underlines, pdf_path, stamps=stamps, stamps_dir=STAMPS_DIR, logger=log)
 
-    def _generate_multiple_pdfs_and_send_email(bundle_id, form_types, form_data_map, student_email, student_name, tx_code):
+    # ============================================================
+    # CORE FUNCTIONS
+    # ============================================================
+
+    def _simulate_payment_confirmation(bundle_id):
         try:
-            attachments = []
-            pdf_map = {}
-            total_amount = sum(DOCUMENT_PRICES.get(ft, cfg.payment_amount_per_doc) for ft in form_types)
-
-            for ft in form_types:
-                pdf_bytes = _make_pdf(ft, form_data_map.get(ft, {}), stamped=True)
-                pdf_map[ft] = pdf_bytes
-                _, _, filename = BUILDERS.get(ft, (None, None, "document.pdf"))
-                attachments.append((filename, pdf_bytes))
-                log.info(f"[PDF] Stamped PDF generated for {ft}")
-
-            encoded_pdfs = {ft: base64.b64encode(pb).decode() for ft, pb in pdf_map.items()}
-
+            tx_code = f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}"
             if use_mongo:
-                mongo_db.documents.update_one({"bundle_id": bundle_id}, {"$set": {"pdfs": encoded_pdfs}})
-            elif bundle_id in memory_storage:
-                memory_storage[bundle_id]["pdfs"] = encoded_pdfs
-
-            if student_email and cfg.brevo_api_key:
-                doc_names = [FORM_TYPE_DISPLAY.get(ft, ft) for ft in form_types]
-                subject = f"Your Documents ({', '.join(doc_names)}) - {bundle_id}"
-                html = build_payment_confirmation_email_multi(student_name, bundle_id, tx_code, form_types, total_amount)
-                # ✅ Added CC: admin email
-                success, message = email_service.send(
-                    to_email=student_email,
-                    to_name=student_name,
-                    subject=subject,
-                    html=html,
-                    attachments=attachments,
-                    cc=["kuccpscourses@gmail.com"]  # <-- CC added here
+                result = mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id, "payment_status": PaymentStatus.PENDING.value},
+                    {"$set": {
+                        "payment_status": PaymentStatus.SUCCESS.value,
+                        "transaction_code": tx_code,
+                        "paid_at": datetime.now(),
+                        "document_status": DocumentStatus.PAYMENT_CONFIRMED.value
+                    }}
                 )
-                if success:
-                    log.info(f"[EMAIL] Sent to {student_email} (CC: kuccpscourses@gmail.com)")
-                elif message == "IP_WHITELIST_ERROR":
-                    log.warning("[EMAIL] IP whitelist error")
-                else:
-                    log.warning(f"[EMAIL] Failed: {message}")
-            else:
-                log.warning(f"[EMAIL] Skipped for {bundle_id}")
+                if result.modified_count > 0:
+                    log.info(f"[TEST] Simulated payment success for {bundle_id}")
+                    record = mongo_db.documents.find_one({"bundle_id": bundle_id})
+                    if record:
+                        executor.submit(
+                            _generate_multiple_pdfs_and_send_email,
+                            bundle_id,
+                            record.get("form_types", []),
+                            record.get("form_data_map", {}),
+                            record.get("student_email", ""),
+                            record.get("student_name", "Student"),
+                            tx_code
+                        )
+                        return True
+            return False
         except Exception as e:
-            log.exception(f"[BACKGROUND] Task failed for {bundle_id}: {e}")
-
-    # ============================================================
-    # ACTIVE POLLING (with pending handling)
-    # ============================================================
+            log.error(f"[TEST] Simulation error: {e}")
+            return False
 
     def _active_poll_payment(checkout_request_id, bundle_id, form_types, form_data_map,
-                             student_email, student_name, max_attempts=8, interval=1.0):
-        time.sleep(2.0)
+                             student_email, student_name, max_attempts=10, interval=1.0):
+        time.sleep(3.0)
         for attempt in range(max_attempts):
             record = get_user_document_by_bundle_id(bundle_id)
-            if record and record.get("payment_status") == PaymentStatus.SUCCESS.value:
+            if not record:
+                log.warning(f"[POLL] Document {bundle_id} not found")
+                return
+            current_status = record.get("payment_status")
+            if current_status == PaymentStatus.SUCCESS.value:
                 log.info(f"[POLL] {bundle_id} already confirmed by callback")
                 return
-
+            if current_status == PaymentStatus.FAILED.value:
+                log.info(f"[POLL] {bundle_id} already marked as failed by callback")
+                return
             try:
                 success, result = mpesa.query_transaction(checkout_request_id)
                 if success:
                     tx_code = result.get("mpesa_receipt_number", checkout_request_id)
+                    record_check = get_user_document_by_bundle_id(bundle_id)
+                    if record_check and record_check.get("payment_status") == PaymentStatus.SUCCESS.value:
+                        log.info(f"[POLL] {bundle_id} was updated by callback while querying")
+                        return
                     if use_mongo:
-                        mongo_db.documents.update_one(
-                            {"bundle_id": bundle_id, "payment_status": {"$ne": PaymentStatus.SUCCESS.value}},
+                        update_result = mongo_db.documents.update_one(
+                            {"bundle_id": bundle_id, "payment_status": PaymentStatus.PENDING.value},
                             {"$set": {
                                 "payment_status": PaymentStatus.SUCCESS.value,
                                 "transaction_code": tx_code,
-                                "paid_at": datetime.now()
+                                "paid_at": datetime.now(),
+                                "document_status": DocumentStatus.PAYMENT_CONFIRMED.value
                             }}
                         )
+                        if update_result.modified_count == 0:
+                            log.info(f"[POLL] {bundle_id} was already updated to success")
+                            continue
                     elif bundle_id in memory_storage:
-                        if memory_storage[bundle_id].get("payment_status") != PaymentStatus.SUCCESS.value:
-                            memory_storage[bundle_id].update({
-                                "payment_status": PaymentStatus.SUCCESS.value,
-                                "transaction_code": tx_code,
-                                "paid_at": datetime.now()
-                            })
-                    executor.submit(
-                        _generate_multiple_pdfs_and_send_email,
-                        bundle_id, form_types, form_data_map,
-                        student_email, student_name, tx_code
-                    )
-                    log.info(f"[POLL] Payment confirmed via query for {bundle_id} after {attempt+1} attempts")
-                    return
-
-                if result.get("status") == "pending":
-                    log.debug(f"[POLL] {bundle_id} still pending (attempt {attempt+1}/{max_attempts})")
+                        if memory_storage[bundle_id].get("payment_status") == PaymentStatus.PENDING.value:
+                            memory_storage[bundle_id]["payment_status"] = PaymentStatus.SUCCESS.value
+                            memory_storage[bundle_id]["transaction_code"] = tx_code
+                            memory_storage[bundle_id]["paid_at"] = datetime.now()
+                    record_check = get_user_document_by_bundle_id(bundle_id)
+                    if record_check and record_check.get("payment_status") == PaymentStatus.SUCCESS.value:
+                        log.info(f"[POLL] Payment confirmed via query for {bundle_id}")
+                        executor.submit(
+                            _generate_multiple_pdfs_and_send_email,
+                            bundle_id, form_types, form_data_map,
+                            student_email, student_name, tx_code
+                        )
+                        return
+                elif result.get("status") == "pending":
                     time.sleep(interval)
                     continue
-
-                if result.get("status") == "failed":
+                elif result.get("status") == "failed":
+                    record_check = get_user_document_by_bundle_id(bundle_id)
+                    if record_check and record_check.get("payment_status") == PaymentStatus.SUCCESS.value:
+                        log.info(f"[POLL] {bundle_id} was updated by callback, ignoring query failure")
+                        return
                     reason = result.get("error", "Transaction failed")
                     if use_mongo:
                         mongo_db.documents.update_one(
-                            {"bundle_id": bundle_id},
+                            {"bundle_id": bundle_id, "payment_status": PaymentStatus.PENDING.value},
                             {"$set": {
                                 "payment_status": PaymentStatus.FAILED.value,
                                 "payment_failure_reason": reason
                             }}
                         )
-                    elif bundle_id in memory_storage:
-                        memory_storage[bundle_id]["payment_status"] = PaymentStatus.FAILED.value
-                        memory_storage[bundle_id]["payment_failure_reason"] = reason
                     log.warning(f"[POLL] Payment failed for {bundle_id}: {reason}")
                     return
-
             except Exception as e:
                 log.error(f"[POLL] Query exception for {bundle_id}: {e}")
-
+                time.sleep(interval)
+                continue
             time.sleep(interval)
+        log.info(f"[POLL] Timeout for {bundle_id}. Check callback status.")
+        final_record = get_user_document_by_bundle_id(bundle_id)
+        if final_record and final_record.get("payment_status") == PaymentStatus.PENDING.value:
+            log.info(f"[POLL] {bundle_id} still pending after max attempts. Waiting for callback.")
 
-        log.info(f"[POLL] Timeout for {bundle_id}. Falling back to callback.")
-
-    # ============================================================
-    # ADMIN DECORATOR
-    # ============================================================
-
-    def admin_required(f):
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            if not session.get("admin_logged_in"):
-                flash("Please log in to access the admin area.", "warning")
-                return redirect(url_for("admin_login"))
-            g.user_email = "admin"
-            return f(*args, **kwargs)
-        return decorated
-
-    # ============================================================
-    # ERROR HANDLERS
-    # ============================================================
-
-    @app.errorhandler(404)
-    def not_found(e):
-        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "Endpoint not found"}), 404
-        flash("Page not found.", "danger")
-        return render_template("error.html", message="Page not found"), 404
-
-    @app.errorhandler(500)
-    def internal_error(e):
-        log.exception("Internal Server Error")
-        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "An internal server error occurred. Please try again later."}), 500
-        flash("An internal server error occurred. Please try again later.", "danger")
-        return render_template("error.html", message="Server error"), 500
-
-    @app.errorhandler(Exception)
-    def handle_exception(e):
-        log.exception("Unhandled Exception")
-        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify({"error": "An unexpected error occurred. Our team has been notified."}), 500
-        flash("An unexpected error occurred. Our team has been notified.", "danger")
-        raise e
+    def _generate_multiple_pdfs_and_send_email(bundle_id, form_types, form_data_map, student_email, student_name, tx_code):
+        """Generate PDFs, upload to Cloudinary, send email - NO base64 storage"""
+        try:
+            pdf_urls = {}
+            total_amount = sum(DOCUMENT_PRICES.get(ft, cfg.payment_amount_per_doc) for ft in form_types)
+            
+            # Update document status
+            if use_mongo:
+                mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id},
+                    {"$set": {"document_status": DocumentStatus.PDF_GENERATED.value}}
+                )
+            
+            for ft in form_types:
+                pdf_bytes = _make_pdf(ft, form_data_map.get(ft, {}), stamped=True)
+                
+                # Upload to Cloudinary
+                url = storage.upload_pdf(pdf_bytes, bundle_id, ft)
+                if url:
+                    pdf_urls[ft] = url
+                    log.info(f"[CLOUDINARY] Uploaded {ft} for {bundle_id}: {url}")
+                else:
+                    log.warning(f"[CLOUDINARY] Failed to upload {ft} for {bundle_id}")
+                    # Try one more time with direct upload
+                    try:
+                        result = cloudinary.uploader.upload(
+                            io.BytesIO(pdf_bytes),
+                            resource_type="raw",
+                            folder=f"supporting_docs/{bundle_id}",
+                            public_id=ft,
+                            overwrite=True,
+                            access_mode="public",
+                            type="upload",
+                            format="pdf"
+                        )
+                        url = result.get("secure_url")
+                        if url:
+                            parts = url.split("/")
+                            for i, part in enumerate(parts):
+                                if part.startswith("v") and part[1:].isdigit():
+                                    parts.pop(i)
+                                    break
+                            pdf_urls[ft] = "/".join(parts)
+                            log.info(f"[CLOUDINARY] Uploaded {ft} on retry")
+                    except Exception as e2:
+                        log.error(f"[CLOUDINARY] Retry failed: {e2}")
+            
+            # Store URLs in database
+            if use_mongo and pdf_urls:
+                result = mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id},
+                    {"$set": {"pdf_urls": pdf_urls, "document_status": DocumentStatus.EMAIL_SENT.value}}
+                )
+                if result.modified_count > 0:
+                    log.info(f"[DB] Updated pdf_urls for {bundle_id}: {list(pdf_urls.keys())}")
+                else:
+                    log.warning(f"[DB] Failed to update pdf_urls for {bundle_id}")
+            elif bundle_id in memory_storage:
+                memory_storage[bundle_id]["pdf_urls"] = pdf_urls
+            
+            # Send email with CC (only if we have PDFs)
+            if student_email and cfg.brevo_api_key and pdf_urls:
+                doc_names = [FORM_TYPE_DISPLAY.get(ft, ft) for ft in form_types]
+                subject = f"Your Documents ({', '.join(doc_names)}) - {bundle_id}"
+                html = build_payment_confirmation_email_with_buttons(
+                    student_name, bundle_id, tx_code, form_types, total_amount, pdf_urls
+                )
+                
+                success, message = email_service.send(
+                    to_email=student_email,
+                    to_name=student_name,
+                    subject=subject,
+                    html=html,
+                    attachments=[],
+                    cc=["kuccpscourses@gmail.com"]
+                )
+                
+                if success:
+                    log.info(f"[EMAIL] Sent to {student_email} (CC: kuccpscourses@gmail.com)")
+                    if use_mongo:
+                        mongo_db.documents.update_one(
+                            {"bundle_id": bundle_id},
+                            {"$set": {
+                                "email_sent": True,
+                                "email_sent_at": datetime.now(),
+                                "document_status": DocumentStatus.COMPLETED.value
+                            }}
+                        )
+                else:
+                    log.warning(f"[EMAIL] Failed: {message}")
+            else:
+                log.warning(f"[EMAIL] Skipped for {bundle_id} - Missing email or PDFs")
+                
+        except Exception as e:
+            log.exception(f"[BACKGROUND] Task failed for {bundle_id}: {e}")
 
     # ============================================================
     # ROUTES
@@ -1843,41 +1966,96 @@ def create_app() -> Flask:
 
         bundle_id = str(uuid.uuid4())[:8]
 
-        # ✅ Use KCSE index as account reference (or fallback to bundle_id)
         kcse_index = student_details.get("kcse_index", "").strip()
-        # Clean to alphanumeric and limit to 12 characters
         if kcse_index:
             clean_kcse = re.sub(r"[^a-zA-Z0-9]", "", kcse_index)
             account_ref = clean_kcse[:12]
         else:
-            account_ref = bundle_id[:12]  # fallback
+            account_ref = bundle_id[:12]
 
         try:
-            save_user_document({
-                "bundle_id": bundle_id, "form_types": form_types, "student_details": student_details,
-                "form_data_map": form_data_map, "payment_status": PaymentStatus.PENDING.value,
-                "created_at": datetime.now(), "transaction_code": "", "checkout_request_id": None,
-                "phone_number": formatted_phone, "total_amount": total_amount,
+            record = {
+                "bundle_id": bundle_id,
+                "form_types": form_types,
+                "student_details": student_details,
+                "student_name": student_details.get("student_name", ""),
+                "student_email": student_email,
+                "form_data_map": form_data_map,
+                "payment_status": PaymentStatus.PENDING.value,
+                "document_status": DocumentStatus.PAYMENT_PENDING.value,
+                "created_at": datetime.now(),
+                "transaction_code": None,
+                "checkout_request_id": None,
+                "phone_number": formatted_phone,
+                "total_amount": total_amount,
                 "referral_code": referral_code if valid_code else "",
                 "discount_applied": discount_per_doc if valid_code else 0,
                 "marketer_name": marketer if valid_code else "",
-                "account_reference": account_ref  # store for reference
-            })
+                "account_reference": account_ref,
+                "pdf_urls": {},
+                "email_sent": False,
+                "paid_at": None
+            }
+            if use_mongo:
+                existing = mongo_db.documents.find_one({"bundle_id": bundle_id})
+                if existing:
+                    return jsonify({"error": "Duplicate request. Please try again."}), 409
+                mongo_db.documents.insert_one(record)
+            else:
+                memory_storage[bundle_id] = record
         except Exception as e:
-            log.error(f"Failed to save document: {e}")
+            log.error(f"Failed to create document record: {e}")
             return jsonify({"error": "Database error"}), 500
 
+        # TEST MODE
+        if TEST_MODE:
+            log.info(f"[TEST] Auto-confirming payment for {bundle_id}")
+            if use_mongo:
+                mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id},
+                    {"$set": {
+                        "payment_status": PaymentStatus.SUCCESS.value,
+                        "transaction_code": f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                        "paid_at": datetime.now(),
+                        "document_status": DocumentStatus.PAYMENT_CONFIRMED.value
+                    }}
+                )
+            else:
+                memory_storage[bundle_id]["payment_status"] = PaymentStatus.SUCCESS.value
+                memory_storage[bundle_id]["transaction_code"] = f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                memory_storage[bundle_id]["paid_at"] = datetime.now()
+            
+            executor.submit(
+                _generate_multiple_pdfs_and_send_email,
+                bundle_id,
+                form_types,
+                form_data_map,
+                student_email,
+                student_details.get("student_name", "Student"),
+                f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            )
+            
+            return jsonify({
+                "success": True,
+                "checkout_request_id": f"TEST_{bundle_id}",
+                "merchant_request_id": f"MERCHANT_{bundle_id}",
+                "customer_message": "✅ TEST MODE: Payment auto-confirmed!",
+                "bundle_id": bundle_id,
+                "test_mode": True,
+                "redirect_url": "/payment_status?bundle_id=" + bundle_id
+            })
+
+        # Real M-Pesa
         success, result = mpesa.init_stk_push(formatted_phone, account_ref, f"{len(form_types)} Docs", total_amount)
         if success:
             checkout_request_id = result["checkout_request_id"]
             if use_mongo:
-                mongo_db.documents.update_one({"bundle_id": bundle_id}, {"$set": {
-                    "checkout_request_id": checkout_request_id, "account_reference": account_ref
-                }})
+                mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id},
+                    {"$set": {"checkout_request_id": checkout_request_id}}
+                )
             elif bundle_id in memory_storage:
                 memory_storage[bundle_id]["checkout_request_id"] = checkout_request_id
-                memory_storage[bundle_id]["account_reference"] = account_ref
-
             executor.submit(
                 _active_poll_payment,
                 checkout_request_id,
@@ -1886,29 +2064,44 @@ def create_app() -> Flask:
                 form_data_map,
                 student_email,
                 student_details.get("student_name", "Student"),
-                max_attempts=8,
+                max_attempts=10,
                 interval=1.0
             )
-
             return jsonify({
-                "success": True, "checkout_request_id": checkout_request_id,
+                "success": True,
+                "checkout_request_id": checkout_request_id,
                 "merchant_request_id": result["merchant_request_id"],
-                "customer_message": result["customer_message"], "bundle_id": bundle_id,
+                "customer_message": result["customer_message"],
+                "bundle_id": bundle_id,
                 "elapsed_seconds": result.get("elapsed_seconds"),
                 "redirect_url": "/payment_status?bundle_id=" + bundle_id
             })
         else:
+            if use_mongo:
+                mongo_db.documents.delete_one({"bundle_id": bundle_id})
+            elif bundle_id in memory_storage:
+                del memory_storage[bundle_id]
             return jsonify({"error": result.get("error", "Payment initiation failed")}), 400
+
+    @app.route("/test_pay/<bundle_id>", methods=["GET"])
+    def test_pay(bundle_id):
+        record = get_user_document_by_bundle_id(bundle_id)
+        if not record:
+            return jsonify({"error": "Not found"}), 404
+        if record.get("payment_status") == PaymentStatus.SUCCESS.value:
+            return jsonify({"status": "already_done", "bundle_id": bundle_id})
+        success = _simulate_payment_confirmation(bundle_id)
+        if success:
+            return jsonify({"status": "success", "bundle_id": bundle_id})
+        return jsonify({"status": "failed", "bundle_id": bundle_id}), 500
 
     @app.route("/mpesa_callback", methods=["POST"])
     def mpesa_callback():
         callback_data = request.get_json(force=True, silent=True) or {}
         checkout_request_id, result_code, result_desc, metadata = mpesa.parse_callback(callback_data)
-
         if not checkout_request_id:
             log.warning("[M-PESA] Invalid callback data")
             return jsonify({"status": "error", "message": "Invalid callback data"}), 400
-
         record = None
         if use_mongo:
             record = mongo_db.documents.find_one({"checkout_request_id": checkout_request_id})
@@ -1917,39 +2110,171 @@ def create_app() -> Flask:
                 if isinstance(rec, dict) and rec.get("checkout_request_id") == checkout_request_id:
                     record = rec
                     break
-
         if not record:
             log.warning(f"[M-PESA] Unknown checkout: {checkout_request_id}")
             return jsonify({"status": "ok"}), 200
-
         bundle_id = record.get("bundle_id", "")
+        current_record = get_user_document_by_bundle_id(bundle_id)
+        if current_record:
+            current_status = current_record.get("payment_status")
+            if current_status == PaymentStatus.SUCCESS.value:
+                log.info(f"[M-PESA] {bundle_id} already marked as success, ignoring duplicate callback")
+                return jsonify({"status": "already_success", "bundle_id": bundle_id}), 200
+            if current_status == PaymentStatus.FAILED.value and result_code == 0:
+                log.info(f"[M-PESA] Overriding failed status for {bundle_id} with success from callback")
         if result_code == 0:
             tx_code = metadata.get("MpesaReceiptNumber", checkout_request_id)
-            student_email = record.get("student_details", {}).get("email", "")
-            student_name = record.get("student_details", {}).get("student_name", "Student")
-
+            student_email = record.get("student_email", "")
+            student_name = record.get("student_name", "Student")
             if use_mongo:
-                mongo_db.documents.update_one(
+                result = mongo_db.documents.update_one(
                     {"bundle_id": bundle_id, "payment_status": {"$ne": PaymentStatus.SUCCESS.value}},
-                    {"$set": {"payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()}}
+                    {"$set": {
+                        "payment_status": PaymentStatus.SUCCESS.value,
+                        "transaction_code": tx_code,
+                        "paid_at": datetime.now(),
+                        "document_status": DocumentStatus.PAYMENT_CONFIRMED.value
+                    }}
                 )
-            elif bundle_id in memory_storage and memory_storage[bundle_id].get("payment_status") != PaymentStatus.SUCCESS.value:
-                memory_storage[bundle_id].update({"payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()})
-
-            executor.submit(_generate_multiple_pdfs_and_send_email, bundle_id, record.get("form_types", []),
-                            record.get("form_data_map", {}), student_email, student_name, tx_code)
+                if result.modified_count == 0:
+                    log.info(f"[M-PESA] {bundle_id} was already updated to success")
+            elif bundle_id in memory_storage:
+                if memory_storage[bundle_id].get("payment_status") != PaymentStatus.SUCCESS.value:
+                    memory_storage[bundle_id]["payment_status"] = PaymentStatus.SUCCESS.value
+                    memory_storage[bundle_id]["transaction_code"] = tx_code
+                    memory_storage[bundle_id]["paid_at"] = datetime.now()
+            executor.submit(
+                _generate_multiple_pdfs_and_send_email,
+                bundle_id,
+                record.get("form_types", []),
+                record.get("form_data_map", {}),
+                student_email,
+                student_name,
+                tx_code
+            )
             log.info(f"[M-PESA] Payment confirmed for {bundle_id}")
             return jsonify({"status": "success", "bundle_id": bundle_id}), 200
         else:
             log.warning(f"[M-PESA] Payment failed for {bundle_id}: {result_desc}")
             if use_mongo:
-                mongo_db.documents.update_one({"bundle_id": bundle_id}, {"$set": {
-                    "payment_status": PaymentStatus.FAILED.value, "payment_failure_reason": result_desc
-                }})
+                mongo_db.documents.update_one(
+                    {"bundle_id": bundle_id, "payment_status": PaymentStatus.PENDING.value},
+                    {"$set": {
+                        "payment_status": PaymentStatus.FAILED.value,
+                        "payment_failure_reason": result_desc
+                    }}
+                )
             elif bundle_id in memory_storage:
-                memory_storage[bundle_id]["payment_status"] = PaymentStatus.FAILED.value
-                memory_storage[bundle_id]["payment_failure_reason"] = result_desc
+                if memory_storage[bundle_id].get("payment_status") == PaymentStatus.PENDING.value:
+                    memory_storage[bundle_id]["payment_status"] = PaymentStatus.FAILED.value
+                    memory_storage[bundle_id]["payment_failure_reason"] = result_desc
             return jsonify({"status": "failed", "bundle_id": bundle_id}), 200
+
+    # ============================================================
+    # DOWNLOAD ROUTES
+    # ============================================================
+
+    @app.route("/download_pdf/<bundle_id>/<form_type>", methods=["GET"])
+    def download_single_pdf(bundle_id, form_type):
+        """Download PDF - ONLY from Cloudinary (no base64 fallback)"""
+        record = get_user_document_by_bundle_id(bundle_id)
+        if not record:
+            return jsonify({"error": "Document not found"}), 404
+        if record.get("payment_status") != PaymentStatus.SUCCESS.value:
+            return jsonify({"error": "Payment not completed"}), 402
+        
+        # Check Cloudinary URLs
+        pdf_urls = record.get("pdf_urls", {})
+        if form_type in pdf_urls:
+            try:
+                response = requests.get(pdf_urls[form_type], timeout=30)
+                if response.status_code == 200:
+                    _, _, dl_name = BUILDERS.get(form_type, (None, None, "document.pdf"))
+                    return send_file(
+                        io.BytesIO(response.content),
+                        mimetype="application/pdf",
+                        as_attachment=True,
+                        download_name=dl_name
+                    )
+            except Exception as e:
+                log.error(f"Cloudinary error: {e}")
+        
+        # If Cloudinary fails, try to regenerate
+        form_data_map = record.get("form_data_map", {})
+        if form_type in form_data_map:
+            try:
+                log.info(f"Regenerating PDF on the fly for {bundle_id}/{form_type}")
+                pdf_bytes = _make_pdf(form_type, form_data_map[form_type], stamped=True)
+                _, _, dl_name = BUILDERS.get(form_type, (None, None, "document.pdf"))
+                
+                # Re-upload to Cloudinary
+                url = storage.upload_pdf(pdf_bytes, bundle_id, form_type)
+                if url:
+                    if use_mongo:
+                        mongo_db.documents.update_one(
+                            {"bundle_id": bundle_id},
+                            {"$set": {f"pdf_urls.{form_type}": url}}
+                        )
+                    elif bundle_id in memory_storage:
+                        memory_storage[bundle_id]["pdf_urls"][form_type] = url
+                
+                return send_file(
+                    io.BytesIO(pdf_bytes),
+                    mimetype="application/pdf",
+                    as_attachment=True,
+                    download_name=dl_name
+                )
+            except Exception as e:
+                log.error(f"Error regenerating PDF: {e}")
+        
+        return jsonify({"error": "PDF not found"}), 404
+
+    @app.route("/download_all/<bundle_id>", methods=["GET"])
+    def download_all_pdfs(bundle_id):
+        record = get_user_document_by_bundle_id(bundle_id)
+        if not record:
+            return jsonify({"error": "Document not found"}), 404
+        if record.get("payment_status") != PaymentStatus.SUCCESS.value:
+            return jsonify({"error": "Payment not completed"}), 402
+        
+        pdf_urls = record.get("pdf_urls", {})
+        if pdf_urls:
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                for ft, url in pdf_urls.items():
+                    try:
+                        response = requests.get(url, timeout=30)
+                        if response.status_code == 200:
+                            _, _, dl_name = BUILDERS.get(ft, (None, None, f"{ft}.pdf"))
+                            zf.writestr(dl_name, response.content)
+                        else:
+                            log.warning(f"Failed to fetch {ft}: {response.status_code}")
+                    except Exception as e:
+                        log.error(f"Error downloading {ft}: {e}")
+            zip_buffer.seek(0)
+            return send_file(
+                zip_buffer,
+                mimetype="application/zip",
+                as_attachment=True,
+                download_name=f"documents_{bundle_id}.zip"
+            )
+        
+        return jsonify({"error": "PDFs not found"}), 404
+
+    @app.route("/api/payment_status/<bundle_id>", methods=["GET"])
+    def api_payment_status(bundle_id):
+        record = get_user_document_by_bundle_id(bundle_id)
+        if not record:
+            return jsonify({"error": "Document not found"}), 404
+        status = record.get("payment_status", PaymentStatus.PENDING.value)
+        pdf_urls = record.get("pdf_urls", {})
+        return jsonify({
+            "bundle_id": bundle_id,
+            "status": status,
+            "transaction_code": record.get("transaction_code", ""),
+            "student_name": record.get("student_name", ""),
+            "ready": bool(pdf_urls)
+        })
 
     @app.route("/payment_status")
     def payment_status_page():
@@ -1963,176 +2288,9 @@ def create_app() -> Flask:
             return render_template("error.html", message="Document not found"), 404
         doc_names = ", ".join([FORM_TYPE_DISPLAY.get(ft, ft) for ft in record.get("form_types", [])])
         return render_template("payment_status.html", bundle_id=bundle_id,
-                             student_name=record.get("student_details", {}).get("student_name", ""),
+                             student_name=record.get("student_name", ""),
                              payment_status=record.get("payment_status", PaymentStatus.PENDING.value),
                              doc_names=doc_names, total_amount=record.get("total_amount", 0))
-
-    @app.route("/download_pdf/<bundle_id>/<form_type>", methods=["GET"])
-    def download_single_pdf(bundle_id, form_type):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        if record.get("payment_status") != PaymentStatus.SUCCESS.value:
-            return jsonify({"error": "Payment not completed"}), 402
-        pdfs = record.get("pdfs", {})
-        if not pdfs or form_type not in pdfs:
-            return jsonify({"error": "PDF not found. Please wait a moment."}), 404
-        pdf_bytes = base64.b64decode(pdfs[form_type])
-        _, _, dl_name = BUILDERS.get(form_type, (None, None, "document.pdf"))
-        return send_file(io.BytesIO(pdf_bytes), mimetype="application/pdf", as_attachment=True, download_name=dl_name)
-
-    @app.route("/download_all/<bundle_id>", methods=["GET"])
-    def download_all_pdfs(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        if record.get("payment_status") != PaymentStatus.SUCCESS.value:
-            return jsonify({"error": "Payment not completed"}), 402
-        pdfs = record.get("pdfs", {})
-        if not pdfs:
-            return jsonify({"error": "PDFs not found. Please wait a moment."}), 404
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-            for ft, encoded in pdfs.items():
-                pdf_bytes = base64.b64decode(encoded)
-                _, _, dl_name = BUILDERS.get(ft, (None, None, f"{ft}.pdf"))
-                zf.writestr(dl_name, pdf_bytes)
-        zip_buffer.seek(0)
-        return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=f"documents_{bundle_id}.zip")
-
-    @app.route("/api/payment_status/<bundle_id>", methods=["GET"])
-    def api_payment_status(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        status = record.get("payment_status", PaymentStatus.PENDING.value)
-        response = {
-            "bundle_id": bundle_id, "status": status,
-            "transaction_code": record.get("transaction_code", ""),
-            "student_name": record.get("student_details", {}).get("student_name", "")
-        }
-        if status == PaymentStatus.SUCCESS.value:
-            pdfs = record.get("pdfs", {})
-            response["ready"] = bool(pdfs)
-            if pdfs:
-                response["download_all_url"] = f"/download_all/{bundle_id}"
-        return jsonify(response)
-
-    @app.route("/check_payment_status", methods=["POST"])
-    def check_payment_status():
-        data = request.json or {}
-        bundle_id = data.get("bundle_id", "").strip()
-        checkout_request_id = data.get("checkout_request_id", "").strip()
-        record = None
-
-        if bundle_id:
-            record = get_user_document_by_bundle_id(bundle_id)
-        elif checkout_request_id:
-            if use_mongo:
-                record = mongo_db.documents.find_one({"checkout_request_id": checkout_request_id})
-            else:
-                for rec in memory_storage.values():
-                    if isinstance(rec, dict) and rec.get("checkout_request_id") == checkout_request_id:
-                        record = rec
-                        break
-
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        status = record.get("payment_status", PaymentStatus.PENDING.value)
-
-        if status == PaymentStatus.SUCCESS.value:
-            return jsonify({"status": "success", "paid": True, "transaction_code": record.get("transaction_code", ""), "bundle_id": record.get("bundle_id")})
-        if status == PaymentStatus.FAILED.value:
-            return jsonify({"status": "failed", "paid": False, "reason": record.get("payment_failure_reason", "Payment failed")})
-
-        cr_id = record.get("checkout_request_id", "")
-        if cr_id:
-            success, result = mpesa.query_transaction(cr_id)
-            if success:
-                tx_code = result.get("mpesa_receipt_number", cr_id)
-                if use_mongo:
-                    mongo_db.documents.update_one({"bundle_id": record["bundle_id"]}, {"$set": {
-                        "payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()
-                    }})
-                elif record["bundle_id"] in memory_storage:
-                    memory_storage[record["bundle_id"]].update({"payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()})
-
-                executor.submit(_generate_multiple_pdfs_and_send_email, record["bundle_id"], record.get("form_types", []),
-                                record.get("form_data_map", {}), record.get("student_details", {}).get("email", ""),
-                                record.get("student_details", {}).get("student_name", "Student"), tx_code)
-                return jsonify({"status": "success", "paid": True, "transaction_code": tx_code, "bundle_id": record["bundle_id"]})
-            else:
-                if result.get("status") == "failed":
-                    return jsonify({"status": "failed", "paid": False, "reason": result.get("error", "Transaction failed")})
-                # pending – still waiting
-                return jsonify({"status": "pending", "paid": False})
-        return jsonify({"status": "pending", "paid": False})
-
-    @app.route("/wait_for_payment/<bundle_id>", methods=["GET"])
-    @rate_limit(limiter)
-    def wait_for_payment(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-
-        status = record.get("payment_status", PaymentStatus.PENDING.value)
-        if status == PaymentStatus.SUCCESS.value:
-            return jsonify({
-                "status": "success",
-                "paid": True,
-                "transaction_code": record.get("transaction_code", ""),
-                "bundle_id": bundle_id
-            })
-        if status == PaymentStatus.FAILED.value:
-            return jsonify({
-                "status": "failed",
-                "paid": False,
-                "reason": record.get("payment_failure_reason", "Payment failed")
-            })
-
-        timeout, interval = 10.0, 0.5
-        for _ in range(int(timeout / interval)):
-            time.sleep(interval)
-            record = get_user_document_by_bundle_id(bundle_id)
-            if not record:
-                continue
-            status = record.get("payment_status", PaymentStatus.PENDING.value)
-            if status == PaymentStatus.SUCCESS.value:
-                return jsonify({
-                    "status": "success",
-                    "paid": True,
-                    "transaction_code": record.get("transaction_code", ""),
-                    "bundle_id": bundle_id
-                })
-            if status == PaymentStatus.FAILED.value:
-                return jsonify({
-                    "status": "failed",
-                    "paid": False,
-                    "reason": record.get("payment_failure_reason", "Payment failed")
-                })
-
-        return jsonify({"status": "pending", "paid": False, "bundle_id": bundle_id})
-
-    @app.route("/test_callback/<bundle_id>", methods=["POST"])
-    def test_callback(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        if record.get("payment_status") == PaymentStatus.SUCCESS.value:
-            return jsonify({"status": "already_success", "bundle_id": bundle_id}), 200
-
-        tx_code = f"TEST{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        if use_mongo:
-            mongo_db.documents.update_one({"bundle_id": bundle_id}, {"$set": {
-                "payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()
-            }})
-        elif bundle_id in memory_storage:
-            memory_storage[bundle_id].update({"payment_status": PaymentStatus.SUCCESS.value, "transaction_code": tx_code, "paid_at": datetime.now()})
-
-        executor.submit(_generate_multiple_pdfs_and_send_email, bundle_id, record.get("form_types", []),
-                        record.get("form_data_map", {}), record.get("student_details", {}).get("email", ""),
-                        record.get("student_details", {}).get("student_name", "Student"), tx_code)
-        return jsonify({"status": "success", "bundle_id": bundle_id, "transaction_code": tx_code, "message": "Callback triggered. PDF generation started."})
 
     @app.route("/retrieve", methods=["POST"])
     def retrieve_document():
@@ -2147,245 +2305,73 @@ def create_app() -> Flask:
         if record.get("payment_status") != PaymentStatus.SUCCESS.value:
             return jsonify({"error": "Payment not completed. Please pay first."}), 402
 
-        pdfs = record.get("pdfs", {})
+        pdf_urls = record.get("pdf_urls", {})
         form_types = record.get("form_types", [])
         response_data = {
             "bundle_id": record.get("bundle_id", ""),
-            "student_name": record.get("student_details", {}).get("student_name", ""),
+            "student_name": record.get("student_name", ""),
             "transaction_code": record.get("transaction_code", ""),
             "paid_at": record.get("paid_at", "").isoformat() if hasattr(record.get("paid_at"), "isoformat") else str(record.get("paid_at", "")),
             "documents": []
         }
         for ft in form_types:
-            doc = {"type": ft, "name": FORM_TYPE_DISPLAY.get(ft, ft), "download_url": f"/download_pdf/{record['bundle_id']}/{ft}"}
-            if ft in pdfs:
-                doc["pdf"] = pdfs[ft]
+            doc = {"type": ft, "name": FORM_TYPE_DISPLAY.get(ft, ft)}
+            doc["download_url"] = f"/download_pdf/{record['bundle_id']}/{ft}"
             response_data["documents"].append(doc)
+        
         response_data["download_all_url"] = f"/download_all/{record['bundle_id']}"
         return jsonify(response_data)
 
-    @app.route("/retrieve_direct/<bundle_id>", methods=["GET"])
-    def retrieve_direct(bundle_id):
+    @app.route("/check_pdfs/<bundle_id>", methods=["GET"])
+    def check_pdfs(bundle_id):
+        """Check if PDFs exist for a bundle"""
         record = get_user_document_by_bundle_id(bundle_id)
         if not record:
             return jsonify({"error": "Document not found"}), 404
-        if record.get("payment_status") != PaymentStatus.SUCCESS.value:
-            return jsonify({"error": "Payment not completed"}), 402
-        pdfs = record.get("pdfs", {})
-        if not pdfs:
-            return jsonify({"error": "PDFs not ready yet. Please wait."}), 404
-        return jsonify({"bundle_id": bundle_id, "documents": [{"type": ft, "pdf": enc} for ft, enc in pdfs.items()]})
-
-    @app.route("/verify_payment/<bundle_id>", methods=["GET"])
-    def verify_payment_status(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
+        
+        pdf_urls = record.get("pdf_urls", {})
         return jsonify({
-            "bundle_id": bundle_id, "payment_status": record.get("payment_status", PaymentStatus.PENDING.value),
-            "transaction_code": record.get("transaction_code", ""), "checkout_request_id": record.get("checkout_request_id", ""),
-            "student_name": record.get("student_details", {}).get("student_name", "")
+            "bundle_id": bundle_id,
+            "has_pdfs": bool(pdf_urls),
+            "pdf_urls": pdf_urls,
+            "form_types": record.get("form_types", [])
         })
-
-    # ============================================================
-    # ADMIN ROUTES
-    # ============================================================
-
-    @app.route("/admin")
-    def admin_redirect():
-        return redirect(url_for("admin_dashboard"))
-
-    @app.route("/admin/login", methods=["GET", "POST"])
-    def admin_login():
-        if request.method == "POST":
-            if request.form.get("username") == cfg.admin_username and request.form.get("password") == cfg.admin_password:
-                session["admin_logged_in"] = True
-                session.permanent = True
-                flash("Logged in successfully.", "success")
-                return redirect(url_for("admin_dashboard"))
-            flash("Invalid credentials.", "danger")
-            return render_template("admin_login.html", error="Invalid credentials")
-        return render_template("admin_login.html")
-
-    @app.route("/admin/logout")
-    def admin_logout():
-        session.pop("admin_logged_in", None)
-        flash("Logged out.", "info")
-        return redirect(url_for("admin_login"))
-
-    @app.route("/admin/dashboard")
-    @admin_required
-    def admin_dashboard():
-        return render_template("admin_dashboard.html", referral_discount=cfg.referral_discount_per_document)
-
-    @app.route("/admin/settings", methods=["GET", "POST"])
-    @admin_required
-    def admin_settings_route():
-        if request.method == "POST":
-            try:
-                data = request.json or {}
-                save_admin_settings({
-                    "medical_officer": {
-                        "officer_name": data.get("med_officer_name", ""), "hospital_name": data.get("med_hospital_name", ""),
-                        "designation": data.get("med_designation", ""), "reg_number": data.get("med_reg_number", ""),
-                        "signature": data.get("med_signature", "")
-                    },
-                    "sponsor": {
-                        "sponsor_name": data.get("spo_sponsor_name", ""), "sponsor_email": data.get("spo_sponsor_email", ""),
-                        "sponsor_telephone": data.get("spo_sponsor_phone", ""), "signature": data.get("spo_signature", "")
-                    },
-                    "commissioner": {
-                        "name": data.get("comm_name", ""), "signature": data.get("comm_signature", "")
-                    }
-                })
-                return jsonify({"success": True})
-            except Exception as e:
-                log.error(f"Settings save error: {e}")
-                return jsonify({"success": False, "error": str(e)}), 500
-        return render_template("admin_settings.html", settings=get_admin_settings())
-
-    @app.route("/admin/stamps", methods=["GET", "POST"])
-    @admin_required
-    def admin_stamps():
-        if request.method == "POST":
-            stamp_type = request.form.get("stamp_type")
-            if not stamp_type:
-                return jsonify({"error": "Stamp type required"}), 400
-            if "stamp_image" not in request.files:
-                return jsonify({"error": "No image file provided"}), 400
-            file = request.files["stamp_image"]
-            if file.filename == "":
-                return jsonify({"error": "No image selected"}), 400
-            allowed = {"png", "jpg", "jpeg", "gif", "webp"}
-            if not any(file.filename.lower().endswith(ext) for ext in allowed):
-                return jsonify({"error": "Invalid file type"}), 400
-            file_path = os.path.join(STAMPS_DIR, f"{stamp_type}.png")
-            file.save(file_path)
-            _stamp_image_cache.clear()
-            return jsonify({"success": True, "message": f"Stamp {stamp_type} uploaded successfully!"})
-
-        stamps = []
-        if os.path.exists(STAMPS_DIR):
-            for f in os.listdir(STAMPS_DIR):
-                if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
-                    stamps.append({"type": os.path.splitext(f)[0], "filename": f, "path": f"/static/stamps/{f}", "exists": True})
-
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.args.get("format") == "json":
-            return jsonify(stamps)
-        return render_template("admin_stamps.html", stamps=stamps, stamp_positions=STAMP_POSITIONS)
-
-    @app.route("/admin/stamps/delete/<stamp_type>", methods=["DELETE"])
-    @admin_required
-    def admin_delete_stamp(stamp_type):
-        try:
-            for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]:
-                fp = os.path.join(STAMPS_DIR, f"{stamp_type}{ext}")
-                if os.path.exists(fp):
-                    os.remove(fp)
-                    _stamp_image_cache.clear()
-                    return jsonify({"success": True})
-            return jsonify({"error": "Stamp not found"}), 404
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    @app.route("/admin/api/stamps")
-    @admin_required
-    def admin_api_stamps():
-        stamps = []
-        if os.path.exists(STAMPS_DIR):
-            for f in os.listdir(STAMPS_DIR):
-                if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
-                    stamps.append({"type": os.path.splitext(f)[0], "filename": f, "path": f"/static/stamps/{f}", "exists": True})
-        return jsonify(stamps)
-
-    @app.route("/admin/get_stats")
-    @admin_required
-    def admin_get_stats():
-        records = get_all_user_documents()
-        total = len(records)
-        paid = sum(1 for r in records if r.get("payment_status") == PaymentStatus.SUCCESS.value)
-        total_revenue = sum(r.get("total_amount", 0) for r in records if r.get("payment_status") == PaymentStatus.SUCCESS.value)
-        return jsonify({"total_bundles": total, "paid_bundles": paid, "pending_bundles": total - paid, "total_revenue": total_revenue})
-
-    @app.route("/admin/get_forms")
-    @admin_required
-    def admin_get_forms():
-        records = get_all_user_documents()
-        forms = []
-        for r in records:
-            created = r.get("created_at", "")
-            doc_names = ", ".join([FORM_TYPE_DISPLAY.get(ft, ft) for ft in r.get("form_types", [])])
-            forms.append({
-                "_id": str(r.get("_id", "")), "bundle_id": r.get("bundle_id", ""),
-                "created_at": created.strftime("%Y-%m-%d %H:%M:%S") if hasattr(created, "strftime") else str(created),
-                "student_details": r.get("student_details", {}), "form_types": r.get("form_types", []),
-                "documents": doc_names, "payment_status": r.get("payment_status", PaymentStatus.PENDING.value),
-                "transaction_code": r.get("transaction_code", ""), "checkout_request_id": r.get("checkout_request_id", ""),
-                "total_amount": r.get("total_amount", 0)
-            })
-        return jsonify(sorted(forms, key=lambda x: x["created_at"], reverse=True))
-
-    @app.route("/admin/get_document_pdf/<bundle_id>")
-    @admin_required
-    def admin_get_document_pdf(bundle_id):
-        record = get_user_document_by_bundle_id(bundle_id)
-        if not record:
-            return jsonify({"error": "Document not found"}), 404
-        pdfs = record.get("pdfs", {})
-        if not pdfs:
-            return jsonify({"error": "PDFs not found"}), 404
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-            for ft, enc in pdfs.items():
-                pdf_bytes = base64.b64decode(enc)
-                _, _, dl_name = BUILDERS.get(ft, (None, None, f"{ft}.pdf"))
-                zf.writestr(dl_name, pdf_bytes)
-        zip_buffer.seek(0)
-        return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=f"documents_{bundle_id}.zip")
-
-    @app.route("/admin/referral_codes", methods=["GET", "POST"])
-    @admin_required
-    def admin_referral_codes():
-        if request.method == "POST":
-            data = request.json or {}
-            code = data.get("code", "").strip().upper()
-            marketer = data.get("marketer_name", "").strip()
-            discount = int(data.get("discount_per_doc", cfg.referral_discount_per_document))
-            if not code or not marketer:
-                return jsonify({"error": "Code and marketer name required"}), 400
-            if create_referral_code(code, marketer, discount):
-                return jsonify({"success": True, "message": f"Code {code} created."})
-            return jsonify({"error": "Code already exists or creation failed."}), 400
-        return jsonify(get_all_referral_codes())
-
-    # ============================================================
-    # HEALTH CHECK
-    # ============================================================
 
     @app.route("/health")
     def health():
         db_ok, db_msg = db_manager.health_check()
         cache_ok, cache_msg = cache.health_check()
-        status = {
+        return jsonify({
             "status": "healthy" if (db_ok and cache_ok) else "degraded",
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "database": {"connected": db_ok, "message": db_msg},
             "cache": {"connected": cache_ok, "message": cache_msg},
             "mpesa": "configured" if (cfg.mpesa_consumer_key and cfg.mpesa_passkey) else "missing",
             "brevo": "configured" if cfg.brevo_api_key else "missing",
-            "environment": "production" if cfg.is_production else "development",
-            "version": "2.0.0"
-        }
-        code = 200 if status["status"] == "healthy" else 503
-        return jsonify(status), code
+            "cloudinary": "configured" if (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY")) else "missing",
+            "version": "3.0.0"
+        }), 200 if db_ok and cache_ok else 503
 
-    # ============================================================
-    # STATIC STAMPS
-    # ============================================================
+    @app.route("/admin/login", methods=["GET", "POST"])
+    def admin_login():
+        if request.method == "POST":
+            if request.form.get("username") == cfg.admin_username and request.form.get("password") == cfg.admin_password:
+                session["admin_logged_in"] = True
+                flash("Logged in successfully.", "success")
+                return redirect(url_for("admin_dashboard"))
+            flash("Invalid credentials.", "danger")
+        return render_template("admin_login.html")
 
-    @app.route("/static/stamps/<path:filename>")
-    def serve_stamp(filename):
-        return send_file(os.path.join(STAMPS_DIR, filename))
+    @app.route("/admin/dashboard")
+    @admin_required
+    def admin_dashboard():
+        return render_template("admin_dashboard.html")
+
+    @app.route("/admin/logout")
+    def admin_logout():
+        session.pop("admin_logged_in", None)
+        flash("Logged out.", "info")
+        return redirect(url_for("admin_login"))
 
     # ============================================================
     # STARTUP / SHUTDOWN
@@ -2411,25 +2397,22 @@ def create_app() -> Flask:
     verify_assets()
 
     log.info("=" * 60)
-    log.info("SUPPORTING DOCUMENTS GENERATOR v2.1 — SESSION PERSISTENCE")
+    log.info("SUPPORTING DOCUMENTS GENERATOR v3.0 — OPTIMIZED (NO BASE64)")
     log.info("=" * 60)
     log.info(f"Environment: {'PRODUCTION' if cfg.is_production else 'DEVELOPMENT'}")
-    log.info(f"Database: {'MongoDB' if use_mongo else 'In-Memory (NOT FOR PRODUCTION)'}")
-    log.info(f"Cache: {'Redis' if cache._redis else 'In-Memory'}")
-    log.info(f"Session Store: {cfg.session_type}")
-    log.info(f"Rate Limit: {cfg.rate_limit_per_minute}/min")
-    log.info(f"Workers: {cfg.max_background_workers}")
-    log.info(f"M-Pesa: {'CONFIGURED' if (cfg.mpesa_consumer_key and cfg.mpesa_passkey) else 'NOT CONFIGURED'}")
+    log.info(f"Database: {'MongoDB' if use_mongo else 'In-Memory'}")
+    log.info(f"Test Mode: {'ON' if TEST_MODE else 'OFF'}")
+    log.info(f"Cloudinary: {'CONFIGURED' if (os.getenv('CLOUDINARY_CLOUD_NAME') and os.getenv('CLOUDINARY_API_KEY')) else 'NOT CONFIGURED'}")
+    log.info(f"Email CC: kuccpscourses@gmail.com")
+    log.info(f"Base64 Storage: DISABLED (Saving 900KB per user)")
     log.info("=" * 60)
 
     return app
-
 
 # ============================================================================
 # ENTRY POINT
 # ============================================================================
 
-# Create the Flask application instance (available for Gunicorn)
 app = create_app()
 
 if __name__ == "__main__":

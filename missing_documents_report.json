@@ -1,0 +1,469 @@
+{
+  "total": 16,
+  "missing": [
+    {
+      "bundle_id": "9caf0efb",
+      "student_name": "Njuguna Adelaide Gathigia",
+      "student_email": "addynjuguna780@gmail.com",
+      "paid_at": "2026-07-14T17:08:10.383000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "af85da9e",
+      "student_name": "GRACE WANJIRU NJUGUNA",
+      "student_email": "njugunagrace040@gmail.com",
+      "paid_at": "2026-07-14T11:41:46.792000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "c46fe76b",
+      "student_name": "Joshua Mauta Mbatha ",
+      "student_email": "joshuamauta293@gmail.com",
+      "paid_at": "2026-07-14T11:03:11.836000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "fab0f5eb",
+      "student_name": "Ali Arafat",
+      "student_email": "aliarafatali392@gmail.com",
+      "paid_at": "2026-07-14T10:43:11.993000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "292416b6",
+      "student_name": "Gerald Joel isahi ",
+      "student_email": "Geraldisahi@gmail.com",
+      "paid_at": "2026-07-14T08:51:23.733000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "bc0dc5cc",
+      "student_name": "Michael kamau",
+      "student_email": "michaelkamau1708@gmail.com",
+      "paid_at": "2026-07-13T18:11:37.520000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "3ed3cac6",
+      "student_name": "FRED OMBOYE KERUBO",
+      "student_email": "fredrickomboye@gmail.com",
+      "paid_at": "2026-07-13T16:21:13.233000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "803df347",
+      "student_name": "Benson lesasuyan ",
+      "student_email": "sasuyanb@gmail.com",
+      "paid_at": "2026-07-13T14:21:26.422000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "c4fbd439",
+      "student_name": "Delan Kiptoo Kiplagat",
+      "student_email": "kiplagatdelan@gmail.com",
+      "paid_at": "2026-07-13T09:48:22.753000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "02955f96",
+      "student_name": "CHELANGAT MERCY",
+      "student_email": "blickxenchelangat@gmail.com",
+      "paid_at": "2026-07-13T08:04:16.387000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "2392866c",
+      "student_name": "SYLEENA WANGUI KIOGORA",
+      "student_email": "kiogorasyleena@gmail.com",
+      "paid_at": "2026-07-13T08:00:01.370000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "95e42048",
+      "student_name": "Mwakachola Candys wanjira ",
+      "student_email": "mwakacholacandys@gmail.com",
+      "paid_at": "2026-07-13T06:57:56.483000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "3fdb928c",
+      "student_name": "Mwakachola Candys wanjira ",
+      "student_email": "mwakacholacandys@gmail.com",
+      "paid_at": "2026-07-13T06:28:08.721000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "ee184712",
+      "student_name": "JOVIAL NYASIMI",
+      "student_email": "jovialnyasimi17@gmail.com",
+      "paid_at": "2026-07-13T06:22:02.453000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "61480064",
+      "student_name": "Kelvin Mwenda",
+      "student_email": "parmarshaifaly@gmail.com",
+      "paid_at": "2026-07-13T01:57:04.948000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "4d4b1510",
+      "student_name": "Kelvin Mwenda",
+      "student_email": "parmarshaifaly@gmail.com",
+      "paid_at": "2026-07-13T01:27:34.184000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    }
+  ],
+  "no_pdfs": [],
+  "missing_emails": [
+    {
+      "bundle_id": "9caf0efb",
+      "student_name": "Njuguna Adelaide Gathigia",
+      "student_email": "addynjuguna780@gmail.com",
+      "paid_at": "2026-07-14T17:08:10.383000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "af85da9e",
+      "student_name": "GRACE WANJIRU NJUGUNA",
+      "student_email": "njugunagrace040@gmail.com",
+      "paid_at": "2026-07-14T11:41:46.792000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "c46fe76b",
+      "student_name": "Joshua Mauta Mbatha ",
+      "student_email": "joshuamauta293@gmail.com",
+      "paid_at": "2026-07-14T11:03:11.836000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "fab0f5eb",
+      "student_name": "Ali Arafat",
+      "student_email": "aliarafatali392@gmail.com",
+      "paid_at": "2026-07-14T10:43:11.993000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "292416b6",
+      "student_name": "Gerald Joel isahi ",
+      "student_email": "Geraldisahi@gmail.com",
+      "paid_at": "2026-07-14T08:51:23.733000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "bc0dc5cc",
+      "student_name": "Michael kamau",
+      "student_email": "michaelkamau1708@gmail.com",
+      "paid_at": "2026-07-13T18:11:37.520000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 0
+    },
+    {
+      "bundle_id": "3ed3cac6",
+      "student_name": "FRED OMBOYE KERUBO",
+      "student_email": "fredrickomboye@gmail.com",
+      "paid_at": "2026-07-13T16:21:13.233000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "803df347",
+      "student_name": "Benson lesasuyan ",
+      "student_email": "sasuyanb@gmail.com",
+      "paid_at": "2026-07-13T14:21:26.422000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "c4fbd439",
+      "student_name": "Delan Kiptoo Kiplagat",
+      "student_email": "kiplagatdelan@gmail.com",
+      "paid_at": "2026-07-13T09:48:22.753000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "02955f96",
+      "student_name": "CHELANGAT MERCY",
+      "student_email": "blickxenchelangat@gmail.com",
+      "paid_at": "2026-07-13T08:04:16.387000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "2392866c",
+      "student_name": "SYLEENA WANGUI KIOGORA",
+      "student_email": "kiogorasyleena@gmail.com",
+      "paid_at": "2026-07-13T08:00:01.370000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "95e42048",
+      "student_name": "Mwakachola Candys wanjira ",
+      "student_email": "mwakacholacandys@gmail.com",
+      "paid_at": "2026-07-13T06:57:56.483000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "3fdb928c",
+      "student_name": "Mwakachola Candys wanjira ",
+      "student_email": "mwakacholacandys@gmail.com",
+      "paid_at": "2026-07-13T06:28:08.721000",
+      "form_types": [
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "ee184712",
+      "student_name": "JOVIAL NYASIMI",
+      "student_email": "jovialnyasimi17@gmail.com",
+      "paid_at": "2026-07-13T06:22:02.453000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "61480064",
+      "student_name": "Kelvin Mwenda",
+      "student_email": "parmarshaifaly@gmail.com",
+      "paid_at": "2026-07-13T01:57:04.948000",
+      "form_types": [
+        "sponsorship",
+        "single_parent"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    },
+    {
+      "bundle_id": "4d4b1510",
+      "student_name": "Kelvin Mwenda",
+      "student_email": "parmarshaifaly@gmail.com",
+      "paid_at": "2026-07-13T01:27:34.184000",
+      "form_types": [
+        "sponsorship"
+      ],
+      "has_pdfs": true,
+      "missing_pdfs": [],
+      "email_sent": false,
+      "email_sent_at": null,
+      "days_ago": 1
+    }
+  ],
+  "both_missing": []
+}

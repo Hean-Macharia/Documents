@@ -70,4 +70,5 @@ greenlet>=2.0.0                # Gevent dependency (explicit pin)
 # Optional: Production Monitoring / Observability
 # ------------------------------------------------------------------------------
 prometheus-flask-exporter>=0.22.0   # Prometheus metrics (uncomment if needed)
-sentry-sdk[flask]>=1.30.0           # Error tracking (uncomment if needed)
+sentry-sdk[flask]>=1.30.0
+cloudinary==1.40.0           # Error tracking (uncomment if needed)
