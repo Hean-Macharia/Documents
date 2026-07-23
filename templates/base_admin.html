@@ -306,7 +306,7 @@
             </a>
             <ul class="nav-links">
                 <li><a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">Dashboard</a></li>
-                <li><a href="{{ url_for('admin_settings_route') }}" class="{% if request.endpoint == 'admin_settings_route' %}active{% endif %}">Settings</a></li>
+                <li><a href="{{ url_for('admin_settings_page') }}" class="{% if request.endpoint == 'admin_settings_page' %}active{% endif %}">Settings</a></li>
                 <li><a href="{{ url_for('admin_logout') }}" class="logout-btn">Logout</a></li>
             </ul>
         </div>

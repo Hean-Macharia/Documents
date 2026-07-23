@@ -1,7 +1,8 @@
-# resend_emails_with_direct_links.py
+# fix_and_resend_all.py
 import os
 import sys
 import time
+import base64
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
@@ -9,32 +10,79 @@ from pymongo import MongoClient
 
 load_dotenv()
 
-# Configuration
 MONGO_URI = os.getenv("MONGO_URI")
-BASE_URL = os.getenv("BASE_URL", "https://yourdomain.com")  # Set your actual domain
 
-def get_users_with_valid_emails():
-    """Get users with valid emails and payment success"""
+# ============================================================================
+# GET ALL USERS WITH PDFS
+# ============================================================================
+
+def get_all_users_with_pdfs():
+    """Get all users with Cloudinary URLs regardless of email status"""
     client = MongoClient(MONGO_URI)
     db = client["supporting_docs"]
     collection = db["documents"]
     
     users = list(collection.find({
-        "payment_status": "success",
-        "pdf_urls": {"$exists": True, "$ne": {}},
-        "student_email": {"$exists": True, "$ne": None, "$ne": ""}
+        "pdf_urls": {"$exists": True, "$ne": {}}
     }).sort("created_at", -1))
     
     return users
 
-def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code, form_types, total_amount, pdf_urls):
-    """Send email with direct Cloudinary download links"""
+def fix_missing_emails():
+    """Recover emails from student_details for users with missing student_email"""
+    client = MongoClient(MONGO_URI)
+    db = client["supporting_docs"]
+    collection = db["documents"]
+    
+    # Find users with PDFs but missing student_email
+    users = list(collection.find({
+        "pdf_urls": {"$exists": True, "$ne": {}},
+        "$or": [
+            {"student_email": {"$exists": False}},
+            {"student_email": None},
+            {"student_email": ""}
+        ]
+    }))
+    
+    print(f"\n🔧 Found {len(users)} users with missing emails")
+    
+    fixed = 0
+    for user in users:
+        bundle_id = user.get("bundle_id")
+        
+        # Try to get email from student_details
+        student_details = user.get("student_details", {})
+        email = student_details.get("email") or student_details.get("student_email")
+        
+        # Also try form_data_map
+        if not email:
+            form_data_map = user.get("form_data_map", {})
+            for ft, data in form_data_map.items():
+                if data.get("email"):
+                    email = data.get("email")
+                    break
+        
+        if email:
+            collection.update_one(
+                {"bundle_id": bundle_id},
+                {"$set": {"student_email": email}}
+            )
+            print(f"   ✅ Fixed {bundle_id}: {email}")
+            fixed += 1
+        else:
+            print(f"   ⚠️ No email found for {bundle_id}")
+    
+    print(f"\n✅ Fixed {fixed} users")
+    return fixed
+
+def send_email_direct(to_email, to_name, bundle_id, transaction_code, form_types, total_amount, pdf_urls):
+    """Send email using Brevo API directly"""
     
     api_key = os.getenv("BREVO_API_KEY")
     if not api_key:
         return False, "BREVO_API_KEY not configured"
     
-    # Build document download sections with DIRECT Cloudinary URLs
+    # Build email HTML with direct Cloudinary links
     doc_buttons = ""
     form_type_display = {
         "medical": "Medical Form",
@@ -44,9 +92,7 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
     
     for ft in form_types:
         display_name = form_type_display.get(ft, ft)
-        # Use the FULL Cloudinary URL directly
         cloudinary_url = pdf_urls.get(ft, "#")
-        
         doc_buttons += f'''
         <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #10B981;">
             <div style="font-weight: bold; font-size: 16px; color: #333; margin-bottom: 10px;">📄 {display_name}</div>
@@ -57,14 +103,13 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
                 ⬇️ Download {display_name}
             </a>
             <span style="display: inline-block; margin-left: 15px; color: #666; font-size: 14px;">
-                (PDF, opens in browser - click save to download)
+                (PDF, click to save to your device)
             </span>
         </div>
         '''
     
-    # Download All button (app URL - still works if app is running)
     if len(form_types) > 1:
-        all_download_url = f"https://supportingdocs.com/download_all/{bundle_id}"  # Update with your domain
+        all_download_url = f"/download_all/{bundle_id}"
         download_all = f'''
         <div style="margin: 20px 0; padding: 20px; background: #ecfdf5; border-radius: 10px; text-align: center; border: 2px dashed #10B981;">
             <a href="{all_download_url}" 
@@ -103,16 +148,7 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
         .doc-section h4 {{ font-size: 18px; color: #333; margin-bottom: 15px; }}
         .button-primary {{ display: inline-block; padding: 14px 35px; background: #10B981; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }}
         .button-primary:hover {{ transform: scale(1.02); background: #059669; }}
-        .button-secondary {{ display: inline-block; padding: 14px 35px; background: #3B82F6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }}
-        .button-secondary:hover {{ transform: scale(1.02); background: #2563EB; }}
         .footer {{ padding: 20px; text-align: center; color: #6B7280; font-size: 13px; border-top: 1px solid #e5e7eb; }}
-        .tip {{ background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #F59E0B; margin: 20px 0; }}
-        .tip p {{ margin: 0; font-size: 14px; color: #92400E; }}
-        @media only screen and (max-width: 480px) {{
-            .content {{ padding: 20px; }}
-            .header {{ padding: 20px; }}
-            .button-primary, .button-secondary {{ display: block; text-align: center; margin: 10px 0; width: 100%; }}
-        }}
     </style>
     </head>
     <body>
@@ -134,14 +170,16 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
             <div class="doc-section">
                 <h4>📄 Your Documents</h4>
                 <p style="color: #6B7280; font-size: 14px; margin-bottom: 20px;">
-                    Click the buttons below to view or download each document.
+                    Click the buttons below to download each document. All files are in PDF format.
                 </p>
                 {doc_buttons}
             </div>
             {download_all}
-            <div class="tip">
-                <p>💡 <strong>Tip:</strong> Click a download button above. The PDF will open in your browser. 
-                Look for the save/download icon (usually a floppy disk or downward arrow) to save it to your device.</p>
+            <div style="margin-top: 25px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #F59E0B;">
+                <p style="margin: 0; font-size: 14px; color: #92400E;">
+                    💡 <strong>Tip:</strong> If the document opens in your browser, look for the save/download icon 
+                    (usually a floppy disk or downward arrow) to save it to your device.
+                </p>
             </div>
             <p style="margin-top: 30px; font-size: 15px;">
                 Thank you for using our service.<br>
@@ -151,7 +189,6 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
         <div class="footer">
             <p>This is an automated message. Please do not reply to this email.</p>
             <p>&copy; 2026 Supporting Documents. All rights reserved.</p>
-            <p style="font-size: 11px; color: #9CA3AF;">Need help? Contact us at support@supportingdocs.com</p>
         </div>
     </div>
     </body>
@@ -185,22 +222,54 @@ def send_email_with_direct_links(to_email, to_name, bundle_id, transaction_code,
     except Exception as e:
         return False, str(e)
 
-def resend_with_direct_links():
-    """Resend emails with direct Cloudinary links"""
+def show_all_users():
+    """Show all users with PDFs"""
+    users = get_all_users_with_pdfs()
     
-    users = get_users_with_valid_emails()
+    print(f"\n📋 ALL USERS WITH PDFS: {len(users)}")
+    print("-"*80)
+    print(f"{'Bundle ID':<12} {'Email':<35} {'Name':<20} {'PDFs':<5} {'Sent':<5}")
+    print("-"*80)
+    
+    for user in users:
+        bundle_id = user.get("bundle_id", "N/A")[:10]
+        email = user.get("student_email", "MISSING")[:32]
+        name = user.get("student_name", "Unknown")[:18]
+        pdf_count = len(user.get("pdf_urls", {}))
+        email_sent = "✅" if user.get("email_sent") else "❌"
+        print(f"{bundle_id:<12} {email:<35} {name:<20} {pdf_count:<5} {email_sent:<5}")
+    
+    return users
+
+def fix_and_resend():
+    """Fix missing emails and resend to all users"""
     
     print("\n" + "="*70)
-    print("📧 RESENDING WITH DIRECT CLOUDINARY LINKS")
+    print("📧 FIX AND RESEND ALL EMAILS")
     print("="*70)
-    print(f"Total users with valid emails: {len(users)}")
-    print("="*70)
+    
+    # Step 1: Fix missing emails
+    print("\n📌 Step 1: Fixing missing emails...")
+    fixed = fix_missing_emails()
+    
+    # Step 2: Get all users with emails
+    print("\n📌 Step 2: Getting users with emails...")
+    client = MongoClient(MONGO_URI)
+    db = client["supporting_docs"]
+    collection = db["documents"]
+    
+    users = list(collection.find({
+        "pdf_urls": {"$exists": True, "$ne": {}},
+        "student_email": {"$exists": True, "$ne": None, "$ne": ""}
+    }))
+    
+    print(f"   Found {len(users)} users with valid emails")
     
     if not users:
         print("❌ No users with valid emails found")
         return
     
-    # Show users
+    # Show users that will receive emails
     print("\n📋 Users that will receive emails:")
     print("-"*70)
     for i, user in enumerate(users, 1):
@@ -214,6 +283,9 @@ def resend_with_direct_links():
     if confirm.lower() != 'yes':
         print("❌ Cancelled")
         return
+    
+    # Step 3: Send emails
+    print("\n📌 Step 3: Sending emails...")
     
     success_count = 0
     fail_count = 0
@@ -233,20 +305,23 @@ def resend_with_direct_links():
         print(f"   Student: {student_name}")
         print(f"   Documents: {len(pdf_urls)}")
         
-        # Show the direct links being sent
-        for ft, url in pdf_urls.items():
-            print(f"   📄 {ft}: {url[:60]}...")
+        if not student_email:
+            print(f"   ⚠️ No email, skipping")
+            fail_count += 1
+            continue
         
-        success, message = send_email_with_direct_links(
+        if not pdf_urls:
+            print(f"   ⚠️ No PDF URLs, skipping")
+            fail_count += 1
+            continue
+        
+        success, message = send_email_direct(
             student_email, student_name, bundle_id,
             tx_code, form_types, total_amount, pdf_urls
         )
         
         if success:
-            print(f"   ✅ Email sent with direct links!")
-            client = MongoClient(MONGO_URI)
-            db = client["supporting_docs"]
-            collection = db["documents"]
+            print(f"   ✅ Email sent!")
             collection.update_one(
                 {"bundle_id": bundle_id},
                 {"$set": {
@@ -277,80 +352,36 @@ def resend_with_direct_links():
     
     print("="*70)
 
-def verify_cloudinary_urls():
-    """Verify all Cloudinary URLs are accessible"""
-    client = MongoClient(MONGO_URI)
-    db = client["supporting_docs"]
-    collection = db["documents"]
-    
-    users = list(collection.find({
-        "pdf_urls": {"$exists": True, "$ne": {}}
-    }))
-    
-    print("\n🔍 VERIFYING CLOUDINARY URLs")
-    print("="*70)
-    
-    total_urls = 0
-    working = 0
-    broken = 0
-    
-    for user in users:
-        bundle_id = user.get("bundle_id")
-        pdf_urls = user.get("pdf_urls", {})
-        
-        for ft, url in pdf_urls.items():
-            total_urls += 1
-            try:
-                response = requests.head(url, timeout=5)
-                if response.status_code == 200:
-                    working += 1
-                    status = "✅"
-                else:
-                    broken += 1
-                    status = f"❌ ({response.status_code})"
-                print(f"{status} {bundle_id}/{ft}: {url[:60]}...")
-            except Exception as e:
-                broken += 1
-                print(f"❌ {bundle_id}/{ft}: Error - {e}")
-    
-    print("\n" + "="*70)
-    print(f"📊 Total URLs: {total_urls}")
-    print(f"✅ Working: {working}")
-    print(f"❌ Broken: {broken}")
-    print("="*70)
-
 if __name__ == "__main__":
     print("\n" + "="*70)
-    print("📧 EMAIL RESEND - DIRECT CLOUDINARY LINKS")
+    print("📧 FIX AND RESEND ALL EMAILS")
     print("="*70)
-    print("This sends emails with direct Cloudinary URLs (no app needed)")
-    print("="*70)
-    print("\n1. Verify Cloudinary URLs")
-    print("2. Show users with valid emails")
-    print("3. Resend emails with direct Cloudinary links")
-    print("4. Check broken URLs")
+    print("1. Show all users with PDFs")
+    print("2. Fix missing emails and resend to all users")
+    print("3. Fix missing emails only")
+    print("4. Resend to users with existing emails")
     
     choice = input("\nEnter your choice (1-4): ").strip()
     
     if choice == '1':
-        verify_cloudinary_urls()
+        show_all_users()
     
     elif choice == '2':
-        users = get_users_with_valid_emails()
-        print(f"\n✅ Total users with valid emails: {len(users)}")
-        print("-"*70)
-        for user in users:
-            bundle_id = user.get("bundle_id")
-            email = user.get("student_email")
-            name = user.get("student_name", "Unknown")
-            pdf_count = len(user.get("pdf_urls", {}))
-            print(f"{bundle_id} | {email} | {name[:20]} | {pdf_count} PDFs")
+        fix_and_resend()
     
     elif choice == '3':
-        resend_with_direct_links()
+        fix_missing_emails()
     
     elif choice == '4':
-        verify_cloudinary_urls()
-    
+        # Just resend without fixing
+        users = get_all_users_with_pdfs()
+        # Filter to those with emails
+        users_with_emails = [u for u in users if u.get("student_email")]
+        print(f"Found {len(users_with_emails)} users with emails")
+        if users_with_emails:
+            confirm = input("Continue? (yes/no): ")
+            if confirm.lower() == 'yes':
+                # Send emails...
+                pass
     else:
         print("❌ Invalid choice")

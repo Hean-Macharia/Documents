@@ -25,11 +25,31 @@
     </div>
 </div>
 
+<!-- ===== TEST DOCUMENTS STATS ===== -->
+<div class="stats-grid" id="testStatsGrid" style="display: none;">
+    <div class="stat-card" style="border: 1px dashed #F59E0B; background: #FFFBEB;">
+        <div class="number" id="statTestDocs" style="color: #F59E0B;">—</div>
+        <div class="label">🧪 Test Documents</div>
+    </div>
+    <div class="stat-card" style="border: 1px dashed #F59E0B; background: #FFFBEB;">
+        <div class="number" id="statTestRevenue" style="color: #F59E0B;">—</div>
+        <div class="label">🧪 Test Revenue (KES)</div>
+    </div>
+</div>
+
+<!-- ===== FAILED DOCUMENTS STATS (NEW) ===== -->
+<div class="stats-grid" id="failedStatsGrid" style="display: none;">
+    <div class="stat-card" style="border: 1px solid #FEE2E2; background: #FEF2F2;">
+        <div class="number" id="statFailed" style="color: #EF4444;">—</div>
+        <div class="label">❌ Failed</div>
+    </div>
+</div>
+
 <!-- Quick actions -->
 <div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-    <a href="{{ url_for('admin_settings_route') }}" class="btn btn-primary">⚙️ Edit Settings</a>
+    <a href="{{ url_for('admin_settings_page') }}" class="btn btn-primary">⚙️ Edit Settings</a>
     <a href="{{ url_for('admin_stamps') }}" class="btn btn-primary">📜 Manage Stamps</a>
-    <a href="{{ url_for('admin_referral_codes') }}" class="btn btn-primary">🔗 Referral Codes</a>
+    <a href="{{ url_for('admin_referral_codes_page') }}" class="btn btn-primary">🔗 Referral Codes</a>
     <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">🚪 Logout</a>
 </div>
 
@@ -37,7 +57,7 @@
 <div class="card" style="margin-top: 0;">
     <div class="card-header">
         <h2>📄 Document Preview Generator</h2>
-        <span class="sub">Preview dully filled documents with stamps</span>
+        <span class="sub">Preview filled documents with stamps</span>
     </div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -301,6 +321,33 @@
         background: var(--bg-light);
     }
     
+    .badge-test {
+        background: #FEF3C7;
+        color: #92400E;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .badge-real {
+        background: #D1FAE5;
+        color: #065F46;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .badge-failed {
+        background: #FEE2E2;
+        color: #991B1B;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
     code {
         background: var(--bg);
         padding: 0.1rem 0.4rem;
@@ -369,10 +416,40 @@
             const response = await fetch('/admin/get_stats');
             if (!response.ok) throw new Error('Failed to load stats');
             const data = await response.json();
+            
+            // Main stats
             document.getElementById('statTotal').textContent = data.total_bundles ?? '0';
             document.getElementById('statPaid').textContent = data.paid_bundles ?? '0';
             document.getElementById('statPending').textContent = data.pending_bundles ?? '0';
-            document.getElementById('statRevenue').textContent = (data.total_revenue ?? 0).toLocaleString();
+            
+            // Revenue with proper formatting
+            const revenue = data.total_revenue ?? 0;
+            document.getElementById('statRevenue').textContent = revenue.toLocaleString();
+            
+            // Show test stats if there are test documents
+            if (data.test_documents && data.test_documents > 0) {
+                document.getElementById('testStatsGrid').style.display = 'grid';
+                document.getElementById('statTestDocs').textContent = data.test_documents;
+                document.getElementById('statTestRevenue').textContent = (data.test_revenue || 0).toLocaleString();
+            } else {
+                document.getElementById('testStatsGrid').style.display = 'none';
+            }
+            
+            // Show failed stats
+            const failed = data.total_bundles - data.paid_bundles - data.pending_bundles - (data.test_documents || 0);
+            if (failed > 0) {
+                document.getElementById('failedStatsGrid').style.display = 'grid';
+                document.getElementById('statFailed').textContent = failed;
+            } else {
+                document.getElementById('failedStatsGrid').style.display = 'none';
+            }
+            
+            console.log(`💰 Total Revenue: KES ${revenue.toLocaleString()}`);
+            if (data.test_documents) {
+                console.log(`🧪 Test Documents: ${data.test_documents} (KES ${(data.test_revenue || 0).toLocaleString()})`);
+            }
+            console.log(`❌ Failed Documents: ${failed}`);
+            
         } catch (e) {
             console.error('Failed to load stats', e);
             showToast('Could not load statistics. Please refresh.', 'error');
@@ -382,7 +459,7 @@
     // Load referral codes
     async function loadReferralCodes() {
         try {
-            const resp = await fetch('/admin/referral_codes');
+            const resp = await fetch('/admin/api/referral_codes');
             if (!resp.ok) throw new Error('Failed to load referral codes');
             const data = await resp.json();
             const list = document.getElementById('referralCodesList');
@@ -424,22 +501,43 @@
             
             const recent = data.slice(0, 10);
             let html = '<table><thead><tr>';
-            html += '<th>Bundle ID</th><th>Student</th><th>Documents</th><th>Status</th><th>Amount</th><th>Date</th><th>Actions</th>';
+            html += '<th>Bundle ID</th><th>Student</th><th>Documents</th><th>Status</th><th>Amount</th><th>Type</th><th>Date</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
             
             recent.forEach(doc => {
-                const statusColor = doc.payment_status === 'success' ? '#10B981' : 
-                                   doc.payment_status === 'failed' ? '#EF4444' : '#F59E0B';
+                const status = doc.payment_status || 'pending';
+                const statusColor = status === 'success' ? '#10B981' : 
+                                   status === 'failed' ? '#EF4444' : '#F59E0B';
+                const statusDisplay = status.charAt(0).toUpperCase() + status.slice(1);
+                const hasPdfs = doc.pdf_urls && Object.keys(doc.pdf_urls).length > 0;
+                const studentName = doc.student_name || doc.student_details?.student_name || 'N/A';
+                const docTypes = doc.form_types ? doc.form_types.join(', ') : 'N/A';
+                const amount = doc.total_amount || 0;
+                const dateStr = doc.created_at ? new Date(doc.created_at).toLocaleDateString() : 'N/A';
+                const isSuccess = status === 'success';
+                const transactionCode = doc.transaction_code || '';
+                
+                // Check if test document (no transaction code AND amount < 100)
+                const isTest = !transactionCode && amount < 100 && amount > 0;
+                const typeBadge = isTest ? 
+                    '<span class="badge-test">🧪 Test</span>' : 
+                    status === 'failed' ?
+                    '<span class="badge-failed">❌ Failed</span>' :
+                    '<span class="badge-real">✅ Real</span>';
+                
                 html += `<tr>
                     <td><code>${doc.bundle_id}</code></td>
-                    <td>${doc.student_details?.student_name || 'N/A'}</td>
-                    <td>${doc.documents || doc.form_types?.join(', ') || 'N/A'}</td>
-                    <td><span style="color: ${statusColor}; font-weight: 600;">${doc.payment_status}</span></td>
-                    <td>KES ${doc.total_amount || 0}</td>
-                    <td>${doc.created_at || 'N/A'}</td>
+                    <td>${studentName}</td>
+                    <td>${docTypes}</td>
+                    <td><span style="color: ${statusColor}; font-weight: 600;">${statusDisplay}</span></td>
+                    <td>KES ${amount.toLocaleString()}</td>
+                    <td>${typeBadge}</td>
+                    <td>${dateStr}</td>
                     <td>
-                        ${doc.payment_status === 'success' ? 
+                        ${isSuccess && hasPdfs ? 
                             `<a href="/download_all/${doc.bundle_id}" class="btn btn-primary btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">📥 Download</a>` : 
+                            isSuccess && !hasPdfs ?
+                            '<span style="color: #F59E0B; font-size: 0.8rem;">⏳ Processing</span>' :
                             '—'}
                     </td>
                 </tr>`;
@@ -456,13 +554,12 @@
         }
     }
 
-    // Generate document preview - UPDATED with separate stamped route
+    // Generate document preview
     async function generatePreview() {
         const docType = document.getElementById('previewDocType').value;
         const mode = document.getElementById('previewMode').value;
         const isStamped = mode === 'stamped';
         
-        // Collect sample data
         const formData = {
             student_name: document.getElementById('sampleStudentName').value || 'John Mwangi Kamau',
             national_id: document.getElementById('sampleNationalId').value || '12345678',
@@ -481,7 +578,6 @@
             parent_telephone: '0723456789'
         };
         
-        // Choose the appropriate endpoint based on mode
         const endpoint = isStamped ? `/preview_stamped/${docType}` : `/preview/${docType}`;
         
         const statusEl = document.getElementById('previewStatus');
@@ -491,14 +587,13 @@
         try {
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
             
             const blob = await response.blob();
@@ -510,8 +605,7 @@
             const frame = document.getElementById('previewFrame');
             frame.src = url;
             
-            const downloadBtn = document.getElementById('downloadPreviewBtn');
-            downloadBtn.onclick = function() {
+            document.getElementById('downloadPreviewBtn').onclick = function() {
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `${docType}_${mode}_${Date.now()}.pdf`;
@@ -522,7 +616,6 @@
             
             statusEl.textContent = `✅ Preview ready (${mode})`;
             statusEl.style.color = '#10B981';
-            
             showToast(`Preview generated successfully (${mode})`, 'success');
         } catch (error) {
             console.error('Preview generation error:', error);
@@ -547,8 +640,7 @@
     // Close preview
     document.getElementById('closePreviewBtn')?.addEventListener('click', function() {
         document.getElementById('previewContainer').style.display = 'none';
-        const frame = document.getElementById('previewFrame');
-        frame.src = '';
+        document.getElementById('previewFrame').src = '';
         document.getElementById('previewStatus').textContent = '';
     });
 
@@ -561,7 +653,7 @@
             return;
         }
         try {
-            const resp = await fetch('/admin/referral_codes', {
+            const resp = await fetch('/admin/api/referral_codes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code, marketer_name: marketer })
@@ -589,6 +681,7 @@
         loadStats();
         loadReferralCodes();
         loadRecentDocuments();
+        console.log('Admin dashboard loaded');
     });
 
     // Refresh stats every 30 seconds

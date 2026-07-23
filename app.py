@@ -247,7 +247,6 @@ class Config:
     def load(cls) -> "Config":
         env = os.getenv("FLASK_ENV", "development").lower()
         
-        # Auto-detect Render environment
         if IS_RENDER:
             env = "production"
             debug = False
@@ -1884,7 +1883,7 @@ def create_app() -> Flask:
             log.exception(f"[BACKGROUND] Task failed for {bundle_id}: {e}")
 
     # ============================================================
-    # ROUTES
+    # ROUTES - PUBLIC ROUTES
     # ============================================================
 
     @app.route("/")
@@ -2356,6 +2355,17 @@ def create_app() -> Flask:
             "version": "3.0.0"
         }), 200 if db_ok and cache_ok else 503
 
+    # ============================================================
+    # ADMIN ROUTES
+    # ============================================================
+
+    @app.route("/admin")
+    def admin_index():
+        """Redirect to admin login"""
+        if session.get("admin_logged_in"):
+            return redirect(url_for("admin_dashboard"))
+        return redirect(url_for("admin_login"))
+
     @app.route("/admin/login", methods=["GET", "POST"])
     def admin_login():
         if request.method == "POST":
@@ -2369,13 +2379,324 @@ def create_app() -> Flask:
     @app.route("/admin/dashboard")
     @admin_required
     def admin_dashboard():
-        return render_template("admin_dashboard.html")
+        return render_template("admin_dashboard.html", referral_discount=cfg.referral_discount_per_document)
 
     @app.route("/admin/logout")
     def admin_logout():
         session.pop("admin_logged_in", None)
         flash("Logged out.", "info")
         return redirect(url_for("admin_login"))
+
+    # ============================================================
+    # ADMIN API ROUTES
+    # =======================c=====================================
+
+    @app.route("/admin/get_forms", methods=["GET"])
+    @admin_required
+    def admin_get_forms():
+        """Get all documents for admin dashboard"""
+        try:
+            docs = get_all_user_documents()
+            for doc in docs:
+                if '_id' in doc:
+                    doc['_id'] = str(doc['_id'])
+                if 'created_at' in doc and isinstance(doc['created_at'], datetime):
+                    doc['created_at'] = doc['created_at'].isoformat()
+                if 'paid_at' in doc and isinstance(doc['paid_at'], datetime):
+                    doc['paid_at'] = doc['paid_at'].isoformat()
+            return jsonify(docs)
+        except Exception as e:
+            log.error(f"Error getting forms: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/admin/get_stats", methods=["GET"])
+    @admin_required
+    def admin_get_stats():
+        """Get statistics for admin dashboard - Accurate test document detection"""
+        try:
+            docs = get_all_user_documents()
+            total = len(docs)
+            paid = 0
+            pending = 0
+            revenue = 0
+            test_docs = 0
+            test_revenue = 0
+            
+            # Current prices for real documents
+            current_prices = {
+                "medical": 400,
+                "sponsorship": 300,
+                "single_parent": 300,
+            }
+            discount_per_doc = 50
+            
+            for doc in docs:
+                status = doc.get('payment_status', '')
+                form_types = doc.get('form_types', [])
+                stored_amount = doc.get('total_amount', 0)
+                referral_code = doc.get('referral_code', '')
+                transaction_code = doc.get('transaction_code', '')
+                
+                # IMPORTANT: A document is ONLY a test document if:
+                # 1. It has NO transaction_code (never paid)
+                # 2. AND total_amount < 100 (test amount)
+                # 
+                # If it has a transaction_code, it's a REAL payment regardless of amount
+                is_test = False
+                
+                # If there's a transaction code, it's a real payment
+                if transaction_code and transaction_code != '':
+                    is_test = False
+                else:
+                    # Only classify as test if no transaction and amount is small
+                    if stored_amount < 100 and stored_amount > 0:
+                        is_test = True
+                
+                if is_test:
+                    test_docs += 1
+                    if status == 'success':
+                        test_revenue += stored_amount
+                        # Don't add to main revenue
+                    continue
+                
+                # Calculate real document revenue
+                base_price = 0
+                for ft in form_types:
+                    base_price += current_prices.get(ft, 300)
+                
+                # Apply discount if referral code exists
+                discount = len(form_types) * discount_per_doc if referral_code else 0
+                final_price = base_price - discount
+                
+                # Check if paid (either status success or has transaction code)
+                is_paid = (status == 'success') or (transaction_code and transaction_code != '')
+                
+                if is_paid:
+                    paid += 1
+                    # Use the stored amount if it's correct, otherwise use calculated
+                    # For documents with transaction code, use stored amount if it's reasonable
+                    if stored_amount >= 100:
+                        revenue += stored_amount
+                    else:
+                        # Use calculated amount for documents with transaction code but low stored amount
+                        revenue += final_price
+                elif status == 'pending':
+                    pending += 1
+            
+            return jsonify({
+                "total_bundles": total,
+                "paid_bundles": paid,
+                "pending_bundles": pending,
+                "total_revenue": revenue,
+                "test_documents": test_docs,
+                "test_revenue": test_revenue
+            })
+        except Exception as e:
+            log.error(f"Error getting stats: {e}")
+            return jsonify({"error": str(e)}), 500
+    # ============================================================
+    # ADMIN REFERRAL CODES
+    # ============================================================
+
+    @app.route("/admin/referral_codes", methods=["GET"])
+    @admin_required
+    def admin_referral_codes_page():
+        """Render referral codes management page"""
+        return render_template("admin_referral_codes.html", referral_discount=cfg.referral_discount_per_document)
+
+    @app.route("/admin/api/referral_codes", methods=["GET", "POST"])
+    @admin_required
+    def admin_referral_codes_api():
+        """API endpoint for referral codes"""
+        if request.method == "GET":
+            try:
+                codes = get_all_referral_codes()
+                return jsonify(codes)
+            except Exception as e:
+                log.error(f"Error getting referral codes: {e}")
+                return jsonify({"error": str(e)}), 500
+        
+        if request.method == "POST":
+            try:
+                data = request.json or {}
+                code = data.get('code', '').upper().strip()
+                marketer = data.get('marketer_name', '').strip()
+                if not code or not marketer:
+                    return jsonify({"error": "Code and marketer name are required"}), 400
+                
+                success = create_referral_code(code, marketer)
+                if success:
+                    return jsonify({"success": True})
+                else:
+                    return jsonify({"error": "Failed to create code (may already exist)"}), 400
+            except Exception as e:
+                log.error(f"Error creating referral code: {e}")
+                return jsonify({"error": str(e)}), 500
+
+    # ============================================================
+    # ADMIN SETTINGS
+    # ============================================================
+
+    @app.route("/admin/settings", methods=["GET"])
+    @admin_required
+    def admin_settings_page():
+        """Render admin settings page"""
+        try:
+            settings = get_admin_settings()
+            return render_template("admin_settings.html", settings=settings)
+        except Exception as e:
+            log.error(f"Error getting settings: {e}")
+            flash("Error loading settings", "error")
+            return redirect(url_for("admin_dashboard"))
+
+    @app.route("/admin/api/settings", methods=["GET", "POST"])
+    @admin_required
+    def admin_settings_api():
+        """API endpoint for admin settings"""
+        if request.method == "GET":
+            try:
+                settings = get_admin_settings()
+                return jsonify(settings)
+            except Exception as e:
+                log.error(f"Error getting settings: {e}")
+                return jsonify({"error": str(e)}), 500
+        
+        if request.method == "POST":
+            try:
+                data = request.json or {}
+                # Convert flat data to nested structure
+                settings = {
+                    "medical_officer": {
+                        "officer_name": data.get('med_officer_name', ''),
+                        "hospital_name": data.get('med_hospital_name', ''),
+                        "designation": data.get('med_designation', ''),
+                        "reg_number": data.get('med_reg_number', ''),
+                        "signature": data.get('med_signature', '')
+                    },
+                    "sponsor": {
+                        "sponsor_name": data.get('spo_sponsor_name', ''),
+                        "sponsor_email": data.get('spo_sponsor_email', ''),
+                        "sponsor_telephone": data.get('spo_sponsor_phone', ''),
+                        "signature": data.get('spo_signature', '')
+                    },
+                    "commissioner": {
+                        "name": data.get('comm_name', ''),
+                        "signature": data.get('comm_signature', '')
+                    }
+                }
+                save_admin_settings(settings)
+                return jsonify({"success": True})
+            except Exception as e:
+                log.error(f"Error saving settings: {e}")
+                return jsonify({"error": str(e)}), 500
+
+    @app.route("/admin/settings_route", methods=["GET"])
+    @admin_required
+    def admin_settings_route():
+        """Legacy route for settings - redirect to admin_settings"""
+        return redirect(url_for('admin_settings_page'))
+
+    # ============================================================
+    # ADMIN STAMPS
+    # ============================================================
+
+    @app.route("/admin/stamps", methods=["GET"])
+    @admin_required
+    def admin_stamps():
+        """Manage stamps page"""
+        return render_template("admin_stamps.html")
+
+    @app.route("/admin/api/stamps", methods=["GET"])
+    @admin_required
+    def admin_api_stamps():
+        """Get list of available stamps"""
+        try:
+            stamps = []
+            stamp_types = ['hospital_stamp', 'commissioner_stamp', 'sponsor_stamp']
+            for stamp_type in stamp_types:
+                stamp_path = os.path.join(STAMPS_DIR, f"{stamp_type}.png")
+                if os.path.exists(stamp_path):
+                    stamps.append({
+                        'type': stamp_type,
+                        'path': f"/static/stamps/{stamp_type}.png",
+                        'exists': True
+                    })
+            return jsonify(stamps)
+        except Exception as e:
+            log.error(f"Error getting stamps: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/admin/stamps/delete/<stamp_type>", methods=["DELETE"])
+    @admin_required
+    def admin_stamps_delete(stamp_type):
+        """Delete a stamp image"""
+        try:
+            if not stamp_type:
+                return jsonify({"error": "Stamp type is required"}), 400
+            
+            filepath = os.path.join(STAMPS_DIR, f"{stamp_type}.png")
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                _stamp_image_cache.put(stamp_type, None)
+                log.info(f"Deleted stamp: {stamp_type}")
+                return jsonify({"success": True, "message": f"Stamp {stamp_type} deleted"})
+            else:
+                return jsonify({"error": "Stamp file not found"}), 404
+        except Exception as e:
+            log.error(f"Error deleting stamp: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/admin/update_stamp", methods=["POST"])
+    @admin_required
+    def admin_update_stamp():
+        """Upload or update a stamp image"""
+        try:
+            if 'stamp_file' not in request.files:
+                return jsonify({"error": "No file uploaded"}), 400
+            
+            file = request.files['stamp_file']
+            stamp_type = request.form.get('stamp_type', '')
+            
+            if not stamp_type:
+                return jsonify({"error": "Stamp type is required"}), 400
+            
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+            
+            if file:
+                filename = f"{stamp_type}.png"
+                filepath = os.path.join(STAMPS_DIR, filename)
+                file.save(filepath)
+                _stamp_image_cache.put(stamp_type, None)
+                log.info(f"Updated stamp: {stamp_type}")
+                return jsonify({"success": True, "message": f"Stamp {stamp_type} updated successfully"})
+            
+            return jsonify({"error": "Invalid file"}), 400
+        except Exception as e:
+            log.error(f"Error updating stamp: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    # ============================================================
+    # CONTEXT PROCESSOR - Inject stamp positions into templates
+    # ============================================================
+
+    @app.context_processor
+    def inject_stamp_positions():
+        """Inject stamp positions into all templates"""
+        positions = {
+            'medical': {
+                'hospital_stamp': {'x': 475.1, 'y': 412.2, 'width': 76.8, 'height': 28.0},
+                'commissioner_stamp': {'x': 490.5, 'y': 542.6, 'width': 76.8, 'height': 24.0}
+            },
+            'sponsorship': {
+                'sponsor_stamp': {'x': 457.1, 'y': 428.0, 'width': 76.8, 'height': 24.0},
+                'commissioner_stamp': {'x': 460.0, 'y': 583.7, 'width': 76.8, 'height': 24.0}
+            },
+            'single_parent': {
+                'commissioner_stamp': {'x': 475.2, 'y': 674.1, 'width': 76.8, 'height': 24.0}
+            }
+        }
+        return {'stamp_positions': positions}
 
     # ============================================================
     # STARTUP / SHUTDOWN
@@ -2422,7 +2743,6 @@ app = create_app()
 if __name__ == "__main__":
     cfg = Config.load()
     if cfg.is_production:
-        # In production, use gunicorn
         from gunicorn.app.base import BaseApplication
         
         class FlaskApplication(BaseApplication):
